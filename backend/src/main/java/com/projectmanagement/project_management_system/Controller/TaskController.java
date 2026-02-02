@@ -25,5 +25,5 @@ public class TaskController {
         return ResponseEntity.status(HttpStatus.CREATED).body(taskResponseDTO);
     }
 
-    @GetMapping("")
+//    @GetMapping("")
 }
