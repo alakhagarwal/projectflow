@@ -85,14 +85,14 @@ export default function Dashboard({ userName = "User", orgName = "Org1" }) {
   ];
 
   return (
-    <Box className="flex-1 bg-slate-50 p-8 overflow-auto">
+    <Box p={14} className="flex-1 bg-slate-50 overflow-auto ">
       {/* Header */}
       <Group justify="space-between" align="flex-start" mb="xl">
-        <Box>
+        <Box >
           <Text size="2rem" fw={700} className="text-gray-900">
             Welcome back, {userName}
           </Text>
-          <Text c="dimmed" mt={4}>
+          <Text c="dimmed" mt="sm">
             Here's what's happening with your projects today
           </Text>
         </Box>
@@ -107,7 +107,7 @@ export default function Dashboard({ userName = "User", orgName = "Org1" }) {
       </Group>
 
       {/* Stats Grid */}
-      <Box className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <Box mb={"xl"} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, index) => (
           <StatsCard key={index} {...stat} />
         ))}
@@ -117,7 +117,7 @@ export default function Dashboard({ userName = "User", orgName = "Org1" }) {
       <Box className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Project Overview - Takes 2 columns */}
         <Paper
-          p="xl"
+          p="md"
           radius="lg"
           className="lg:col-span-2 border border-gray-100"
         >
@@ -136,7 +136,7 @@ export default function Dashboard({ userName = "User", orgName = "Org1" }) {
           </Group>
 
           {/* Empty State */}
-          <Box className="flex flex-col items-center justify-center py-16">
+          <Box className="flex flex-col items-center justify-center py-16 overflow-auto">
             <Box className="p-6 bg-slate-100 rounded-2xl mb-4">
               <FolderIcon />
             </Box>
@@ -145,7 +145,8 @@ export default function Dashboard({ userName = "User", orgName = "Org1" }) {
             </Text>
             <Button
               radius="md"
-              className="bg-blue-600 hover:bg-blue-700"
+              color="blue"
+              hoverColor="blue"
             >
               Create your First Project
             </Button>
@@ -155,7 +156,7 @@ export default function Dashboard({ userName = "User", orgName = "Org1" }) {
         {/* Right Sidebar */}
         <Box className="space-y-6">
           {/* My Tasks Card */}
-          <Paper p="lg" radius="lg" className="border border-gray-100">
+          <Paper p="lg" radius="lg" className="border border-gray-100 max-h-72 overflow-auto">
             <Group justify="space-between" mb="md">
               <Group gap="xs">
                 <PersonIcon />
@@ -171,7 +172,7 @@ export default function Dashboard({ userName = "User", orgName = "Org1" }) {
           </Paper>
 
           {/* Overdue Card */}
-          <Paper p="lg" radius="lg" className="border border-gray-100">
+          <Paper p="lg" radius="lg" className="border border-gray-100 max-h-72 overflow-auto">
             <Group justify="space-between" mb="md">
               <Group gap="xs">
                 <AlertIcon />
