@@ -10,6 +10,7 @@ import {
   Divider,
   Badge,
 } from "@mantine/core";
+import {useOrg} from "../redux/hooks/useOrg";
 
 // Icons as simple components
 const DashboardIcon = () => (

@@ -1,4 +1,4 @@
-import { use, useEffect } from "react";
+import { useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../redux/hooks/useAuth";
 import { Box, Loader, Center } from "@mantine/core";
@@ -16,11 +16,10 @@ export default function ProtectedRoute({ children }) {
     if (!validationChecked) {
       validateToken();
     }
-
-
   }, [validationChecked, validateToken]);
 
-  if (isValidating) {
+  // Show loader while validating OR before validation has completed
+  if (isValidating || !validationChecked) {
     return (
       <Center style={{ height: "100vh" }}>
         <Loader />
@@ -28,7 +27,7 @@ export default function ProtectedRoute({ children }) {
     );
   }
 
-  if (!isAuthenticated && validationChecked) {
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 

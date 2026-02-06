@@ -1,5 +1,6 @@
 import { Box, Text, Button, Paper, Group, Badge } from "@mantine/core";
 import StatsCard from "./StatsCard";
+import { useAuth } from "../redux/hooks/useAuth";
 
 // Icons
 const FolderIcon = () => (
@@ -84,13 +85,22 @@ export default function Dashboard({ userName = "User", orgName = "Org1" }) {
     },
   ];
 
+  const { fullName, isValidating, validationChecked } = useAuth();
+  const capitalizedName = () => { return fullName
+    ? fullName
+        .split(" ")
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(" ")
+    : "User";
+  };
+
   return (
     <Box p={30} className="flex-1 bg-slate-50 overflow-auto ">
       {/* Header */}
       <Group justify="space-between" align="flex-start" mb="xl">
         <Box >
           <Text size="1.5rem" fw={700} className="text-gray-900">
-            Welcome back, {userName}
+            Welcome back, {isValidating ? "Loading..." : capitalizedName()}!
           </Text>
           <Text c="dimmed" mt="xs">
             Here's what's happening with your projects today

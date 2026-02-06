@@ -123,7 +123,8 @@ export const loginUser = createAsyncThunk(
 
       return {
         token: data.token,
-        email: credentials.email,
+        email: data.email || credentials.email,
+        fullName: data.fullName,  // ← Capture fullName from API response
       };
     } catch (error) {
       return rejectWithValue(error.message);
