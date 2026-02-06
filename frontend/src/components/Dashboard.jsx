@@ -85,14 +85,14 @@ export default function Dashboard({ userName = "User", orgName = "Org1" }) {
   ];
 
   return (
-    <Box p={14} className="flex-1 bg-slate-50 overflow-auto ">
+    <Box p={30} className="flex-1 bg-slate-50 overflow-auto ">
       {/* Header */}
       <Group justify="space-between" align="flex-start" mb="xl">
         <Box >
-          <Text size="2rem" fw={700} className="text-gray-900">
+          <Text size="1.5rem" fw={700} className="text-gray-900">
             Welcome back, {userName}
           </Text>
-          <Text c="dimmed" mt="sm">
+          <Text c="dimmed" mt="xs">
             Here's what's happening with your projects today
           </Text>
         </Box>
@@ -146,7 +146,7 @@ export default function Dashboard({ userName = "User", orgName = "Org1" }) {
             <Button
               radius="md"
               color="blue"
-              hoverColor="blue"
+              className="hover:bg-blue-700"
             >
               Create your First Project
             </Button>

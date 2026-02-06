@@ -82,7 +82,7 @@ export default function Sidebar({ activeItem = "dashboard", onNavigate }) {
   ];
 
   return (
-    <Box p={14}  className="w-72 h-screen bg-white border-r border-gray-200 flex flex-col gap-4">
+    <Box p={20}  className="w-66 h-screen bg-white border-r border-gray-200 flex flex-col gap-4">
       {/* Organization Selector */}
       <Menu opened={orgMenuOpened} onChange={setOrgMenuOpened} position="bottom-start" width={220}>
         <Menu.Target>
@@ -130,7 +130,7 @@ export default function Sidebar({ activeItem = "dashboard", onNavigate }) {
             className="mx-2 rounded-md"
             styles={{
               root: {
-                "&[data-active]": {
+                "&[dataActive]": {
                   backgroundColor: "#EBF5FF",
                   color: "#2563EB",
                 },

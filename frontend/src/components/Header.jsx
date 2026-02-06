@@ -1,5 +1,6 @@
-import { TextInput, Avatar, ActionIcon, Group, Box } from "@mantine/core";
+import { TextInput, Avatar, ActionIcon, Group, Box, Menu } from "@mantine/core";
 import "./Header.css";
+import {useAuth} from "../redux/hooks/useAuth";
 
 const SearchIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -22,6 +23,12 @@ export default function Header({ userName = "User" }) {
     .join("")
     .toUpperCase();
 
+    const { logout } = useAuth();
+
+    const handleLogout = () => {
+      logout();
+    }
+
   return (
     <Box p={15}  className="h-16 bg-white border-b border-gray-200 px-6 flex items-center justify-between">
       {/* Search Bar */}
@@ -37,9 +44,16 @@ export default function Header({ userName = "User" }) {
         <ActionIcon variant="subtle" color="gray" size="lg" radius="md" className="header-action-icon">
           <ThemeIcon />
         </ActionIcon>
-        <Avatar color="blue" radius="xl" size="md" className="header-avatar">
-          {initials}
-        </Avatar>
+        <Menu shadow="md" width={200} className="header-menu">
+          <Menu.Target>
+            <Avatar color="blue" radius="xl" size="md">
+              {initials}
+            </Avatar>
+          </Menu.Target>
+          <Menu.Dropdown>
+            <Menu.Item color="red" onClick={handleLogout}>Logout</Menu.Item>
+          </Menu.Dropdown>
+        </Menu>
       </Group>
     </Box>
   );

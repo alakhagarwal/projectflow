@@ -1,0 +1,230 @@
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+
+const initialState = {
+  token: localStorage.getItem("token") || null,
+  // ☝️ On page load, check if token exists in localStorage (for refresh)
+
+  email: null,
+  // ☝️ Will be set after login
+
+  isAuthenticated: !!localStorage.getItem("token"),
+  // ☝️ Double bang (!!) converts to boolean: "some-token" → true, null → false
+
+  loading: false,
+  // ☝️ Shows loading spinner in UI
+
+  error: null,
+  // ☝️ Shows error message in UI
+
+  // Register state
+  registerLoading: false,
+  registerError: null,
+  fullName: null,
+  registerSuccess: false, // To show success message
+
+  isValidating: false, // Shows loading during validation
+  validationChecked: false, // Tracks if we've checked the token
+
+  // we dont have to show any error message on initial load or while
+};
+
+// Add this BEFORE the createSlice
+export const validateToken = createAsyncThunk(
+  "auth/validateToken",
+  async (_, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        return rejectWithValue("No token found");
+      }
+
+      const response = await fetch(
+        "http://localhost:8080/auth/validate-token",
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Token is invalid or expired
+        localStorage.removeItem("token");
+        return rejectWithValue(data.message || "Token validation failed");
+      }
+
+      // Token is valid, return user data
+      return {
+        email: data.email,
+        fullName: data.fullName,
+        token: token,
+      };
+    } catch (error) {
+      localStorage.removeItem("token");
+      return rejectWithValue("Network error during token validation");
+    }
+  },
+);
+
+// jaha pe jo return hoga wo payload me aayega
+export const registerUser = createAsyncThunk(
+  "auth/register",
+  async (userData, { rejectWithValue }) => {
+    try {
+      const response = await fetch("http://localhost:8080/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(userData), // { email, password, firstName, lastName }
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        // Handle validation errors
+        if (data.errors && typeof data.errors === "object") {
+          // Get all error messages and combine them
+          const errorMessage = Object.values(data.errors).join(". "); // ← Remove [0]
+          return rejectWithValue(errorMessage);
+          // Shows: "Email must be valid. Password must be at least 8 characters"
+        }
+        // Handle other error formats (e.g., "Email already exists")
+        return rejectWithValue(
+          data.message || data.error || "Registration failed",
+        );
+      }
+
+      return data;
+    } catch (error) {
+      return rejectWithValue("Network error. Please check your connection.");
+    }
+  },
+);
+
+export const loginUser = createAsyncThunk(
+  "auth/login",
+  async (credentials, { rejectWithValue }) => {
+    try {
+      const response = await fetch("http://localhost:8080/generate-token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(credentials), // { email, password }
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        return rejectWithValue(data.error || "Login failed");
+      }
+
+      localStorage.setItem("token", data.token);
+
+      return {
+        token: data.token,
+        email: credentials.email,
+      };
+    } catch (error) {
+      return rejectWithValue(error.message);
+    }
+  },
+);
+
+// {
+//   type: "auth/login/rejected",
+//   payload: "Invalid email or password",  // ← From rejectWithValue
+//   meta: { rejectedWithValue: true }
+// }
+
+const authSlice = createSlice({
+  name: "auth",
+  initialState: initialState,
+  // Synchronous action: logout
+  reducers: {
+    logout: (state) => {
+      state.token = null;
+      state.email = null;
+      state.isAuthenticated = false;
+      state.error = null;
+      localStorage.removeItem("token");
+    },
+    // Synchronous action: clear error
+    clearError: (state) => {
+      state.error = null;
+    },
+    clearRegisterError: (state) => {
+      state.registerError = null;
+    },
+
+    resetRegisterState: (state) => {
+      state.registerLoading = false;
+      state.registerError = null;
+      state.registerSuccess = false;
+    },
+  },
+  // Handle async actions in extraReducers
+  extraReducers: (builder) => {
+    // Login cases (already there)
+    builder
+      .addCase(loginUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(loginUser.fulfilled, (state, action) => {
+        state.loading = false;
+        state.fullName = action.payload.fullName; // Set fullName on login success
+        state.token = action.payload.token;
+        state.email = action.payload.email;
+        state.isAuthenticated = true;
+        state.validationChecked = true;
+        state.error = null;
+      })
+      .addCase(loginUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload || "Login failed";
+        state.isAuthenticated = false;
+        state.validationChecked = true;
+      })
+
+      .addCase(registerUser.pending, (state) => {
+        state.registerLoading = true;
+        state.registerError = null;
+        state.registerSuccess = false;
+      })
+      .addCase(registerUser.fulfilled, (state, action) => {
+        state.registerLoading = false;
+        state.registerSuccess = true;
+        state.registerError = null;
+      })
+      .addCase(registerUser.rejected, (state, action) => {
+        state.registerLoading = false;
+        state.registerError = action.payload || ["Registration failed"];
+        state.registerSuccess = false;
+      })
+      .addCase(validateToken.pending, (state) => {
+        state.isValidating = true;
+        state.error = null;
+      })
+      .addCase(validateToken.fulfilled, (state, action) => {
+        state.isValidating = false;
+        state.validationChecked = true;
+        state.isAuthenticated = true;
+        state.token = action.payload.token;
+        state.email = action.payload.email;
+        state.fullName = action.payload.fullName;
+      })
+      .addCase(validateToken.rejected, (state) => {
+        state.isValidating = false;
+        state.validationChecked = true;
+        state.isAuthenticated = false;
+        state.token = null;
+        state.email = null;
+        state.fullName = null;
+      });
+  },
+});
+
+export const { logout, clearError, clearRegisterError, resetRegisterState } =
+  authSlice.actions;
+export default authSlice.reducer;

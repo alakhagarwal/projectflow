@@ -1,14 +1,5 @@
-import { useState } from "react";
-import "./App.css";
-import { Box } from "@mantine/core";
-import Sidebar from "./components/Sidebar";
-import Header from "./components/Header";
-import Dashboard from "./components/Dashboard";
-import { useAuth } from "./redux/hooks/useAuth";
-
-function App() {
+function Home() {
   const [activeNav, setActiveNav] = useState("dashboard");
-  const fullName = useAuth().fullName; // Get fullName from auth state
 
   return (
     <Box className="flex h-screen bg-slate-50">
@@ -27,4 +18,4 @@ function App() {
   );
 }
 
-export default App;
+export default Home;

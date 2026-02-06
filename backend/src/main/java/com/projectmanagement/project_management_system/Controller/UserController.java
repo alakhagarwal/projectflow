@@ -7,7 +7,6 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -39,10 +38,14 @@ public class UserController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
 
+        // Fetch user details to get full name
+        UserResponseDTO userDetails = userService.getUserByEmail(email);
+
         // Return success response with user info
         Map<String, Object> response = new HashMap<>();
         response.put("valid", true);
         response.put("email", email);
+        response.put("fullName", userDetails.getFirstName() + " " + userDetails.getLastName());
         response.put("message", "Token is valid");
 
         return ResponseEntity.ok(response);

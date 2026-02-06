@@ -14,9 +14,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserService implements UserDetailsService {
 
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
-    private PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
@@ -42,6 +42,12 @@ public class UserService implements UserDetailsService {
         User user1 = userRepository.save(user);
         return new UserResponseDTO(user1.getId(), user1.getEmail(), user1.getFirstName(), user1.getLastName());
 
+    }
+
+    public UserResponseDTO getUserByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+        return new UserResponseDTO(user.getId(), user.getEmail(), user.getFirstName(), user.getLastName());
     }
 
 
