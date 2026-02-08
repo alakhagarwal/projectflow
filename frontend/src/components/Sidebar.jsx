@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import {
   Box,
-  NavLink,
   Text,
   Avatar,
   Menu,
@@ -12,6 +11,7 @@ import {
 } from "@mantine/core";
 import { useOrg } from "../redux/hooks/useOrg";
 import CreateOrg from "./CreateOrg";
+import { NavLink, useLocation } from "react-router-dom";
 
 // Icons as simple components
 const DashboardIcon = () => (
@@ -289,53 +289,59 @@ export default function Sidebar() {
       {/* Navigation */}
       <Box className="flex-1 py-2">
         {navItems.map((item) => (
-          <NavLink // change it to navlink of react for routing
+          <NavLink
             key={item.id}
-            label={item.label}
-            leftSection={item.icon}
-            active={activeItem === item.id}
-            onClick={() => onNavigate?.(item.id)}
-            className="mx-2 rounded-md"
-            styles={{
-              root: {
-                "&[dataActive]": {
-                  backgroundColor: "#EBF5FF",
-                  color: "#2563EB",
-                },
-                "&:hover": {
-                  backgroundColor: "#F0F7FF",
-                },
-              },
-            }}
-          />
+            to={`/${item.id}`}
+            style={{ textDecoration: "none" }}
+            className={({ isActive }) =>
+              `mx-2 rounded-lg px-3 py-2.5 transition-all flex items-center gap-3 ${
+                isActive
+                  ? "bg-gray-100"
+                  : "hover:bg-gray-50"
+              }`
+            }
+          >
+            <Box style={{ color: "#6B7280" }}>{item.icon}</Box>
+            <Text size="sm" fw={400} c="dark">
+              {item.label}
+            </Text>
+          </NavLink>
         ))}
 
-        <Divider my="sm" />
+        <Divider my="md" />
 
         {/* My Tasks */}
-        <NavLink
-          label={
-            <Group gap="xs">
-              <span>My Tasks</span>
-              <Badge size="sm" variant="light" color="blue">
-                0
-              </Badge>
-            </Group>
-          }
-          leftSection={<TaskIcon />}
-          rightSection={<ChevronIcon direction="right" />}
-          className="mx-2 rounded-md"
-        />
+        <Box
+          className="mx-2 rounded-lg px-3 py-2.5 bg-gray-50 transition-all flex items-center justify-between"
+          style={{ cursor: "pointer" }}
+        >
+          <Group gap="sm">
+            <Box style={{ color: "#6B7280" }}>
+              <TaskIcon />
+            </Box>
+            <Text size="sm" fw={400} c="dark">
+              My Tasks
+            </Text>
+            <Badge size="xs" variant="light" color="gray" radius="sm">
+              0
+            </Badge>
+          </Group>
+          <Box style={{ color: "#9CA3AF" }}>
+            <ChevronIcon direction="right" />
+          </Box>
+        </Box>
 
-        <Divider my="sm" />
+        <Divider my="md" />
 
         {/* Projects Section */}
         <Box className="px-4 py-2">
           <Group justify="space-between">
-            <Text size="xs" fw={600} c="dimmed" tt="uppercase">
+            <Text size="xs" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: "0.5px" }}>
               Projects
             </Text>
-            <ChevronIcon direction="right" />
+            <Box style={{ color: "#9CA3AF" }}>
+              <ChevronIcon direction="right" />
+            </Box>
           </Group>
         </Box>
       </Box>
