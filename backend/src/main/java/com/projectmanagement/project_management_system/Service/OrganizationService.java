@@ -7,6 +7,7 @@ import com.projectmanagement.project_management_system.Entity.OrganizationMember
 import com.projectmanagement.project_management_system.Entity.User;
 import com.projectmanagement.project_management_system.Enums.MemberStatus;
 import com.projectmanagement.project_management_system.Enums.OrganizationRole;
+import com.projectmanagement.project_management_system.Exception.DuplicateResourceException;
 import com.projectmanagement.project_management_system.Exception.InvalidRequestException;
 import com.projectmanagement.project_management_system.Repository.OrganizationMemberRepository;
 import com.projectmanagement.project_management_system.Repository.OrganizationRepository;
@@ -61,7 +62,7 @@ public class OrganizationService {
 
 
         if (organizationRepository.existsBySlug(slug)) {
-            throw new RuntimeException("Organization with this slug already exists");
+            throw new DuplicateResourceException("Organization with this slug already exists");
         }
 
 
