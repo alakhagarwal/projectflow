@@ -11,7 +11,7 @@ import {
 } from "@mantine/core";
 import { useOrg } from "../redux/hooks/useOrg";
 import CreateOrg from "./CreateOrg";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink} from "react-router-dom";
 
 // Icons as simple components
 const DashboardIcon = () => (
@@ -144,8 +144,8 @@ export default function Sidebar() {
 
   return (
     <Box
-      p={20}
-      className="w-66 h-screen bg-white border-r border-gray-200 flex flex-col gap-4"
+      p={22}
+      className="w-70 h-screen bg-white border-r border-gray-200 flex flex-col gap-1.5"
     >
       {/* Organization Selector */}
       {!loading && !error && organizations.length > 0 && (
@@ -156,7 +156,7 @@ export default function Sidebar() {
           width={240}
         >
           <Menu.Target>
-            <UnstyledButton className="w-full p-3 rounded-lg hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-100">
+            <UnstyledButton pt={5} pb={16} className="w-full rounded-lg hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-100">
               <Group gap="sm">
                 {/* Show logo if available, otherwise show initials */}
                 {selectedOrg?.logoUrl ? (
@@ -287,63 +287,62 @@ export default function Sidebar() {
       <Divider />
 
       {/* Navigation */}
-      <Box className="flex-1 py-2">
+      <Box className="flex-1 flex flex-col">
         {navItems.map((item) => (
           <NavLink
             key={item.id}
             to={`/${item.id}`}
-            style={{ textDecoration: "none" }}
-            className={({ isActive }) =>
-              `mx-2 rounded-lg px-3 py-2.5 transition-all flex items-center gap-3 ${
-                isActive
-                  ? "bg-gray-100"
-                  : "hover:bg-gray-50"
-              }`
-            }
+            style={({ isActive }) => ({
+              display: 'block',
+              padding: '10px',
+              borderRadius: '8px',
+              textDecoration: 'none',
+              transition: 'all 0.2s',
+              backgroundColor: isActive ? '#f3f4f6' : 'transparent',
+              color: isActive ? '#111827' : '#374151',
+            })}
+            className="hover:bg-gray-50"
           >
-            <Box style={{ color: "#6B7280" }}>{item.icon}</Box>
-            <Text size="sm" fw={400} c="dark">
-              {item.label}
-            </Text>
+            <div className="flex items-center gap-3">
+              <span style={{ color: '#6B7280', fontWeight: 600 }}>{item.icon}</span>
+              <span style={{ fontSize: '14px', fontWeight: 600 }}>{item.label}</span>
+            </div>
           </NavLink>
         ))}
 
         <Divider my="md" />
 
         {/* My Tasks */}
-        <Box
-          className="mx-2 rounded-lg px-3 py-2.5 bg-gray-50 transition-all flex items-center justify-between"
-          style={{ cursor: "pointer" }}
+        <div
+          className="mx-2 rounded-lg px-3 py-2.5 bg-gray-50 transition-all flex items-center justify-between cursor-pointer"
         >
-          <Group gap="sm">
-            <Box style={{ color: "#6B7280" }}>
+          <div className="flex items-center gap-3 padding-2">
+            <span className="text-gray-500">
               <TaskIcon />
-            </Box>
-            <Text size="sm" fw={400} c="dark">
+            </span>
+            <span className="text-sm font-normal text-gray-900">
               My Tasks
-            </Text>
+            </span>
             <Badge size="xs" variant="light" color="gray" radius="sm">
               0
             </Badge>
-          </Group>
-          <Box style={{ color: "#9CA3AF" }}>
+          </div>
+          <span className="text-gray-400">
             <ChevronIcon direction="right" />
-          </Box>
-        </Box>
+          </span>
+        </div>
 
         <Divider my="md" />
 
         {/* Projects Section */}
-        <Box className="px-4 py-2">
-          <Group justify="space-between">
-            <Text size="xs" fw={600} c="dimmed" tt="uppercase" style={{ letterSpacing: "0.5px" }}>
-              Projects
-            </Text>
-            <Box style={{ color: "#9CA3AF" }}>
-              <ChevronIcon direction="right" />
-            </Box>
-          </Group>
-        </Box>
+        <div className="px-4 py-2 flex items-center justify-between">
+          <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+            Projects
+          </span>
+          <span className="text-gray-400">
+            <ChevronIcon direction="right" />
+          </span>
+        </div>
       </Box>
 
       {/* Create Organization Modal */}
