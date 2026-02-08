@@ -67,19 +67,13 @@ export default function Login() {
     shouldRedirect: isAuthenticated && validationChecked,
   });
 
-  // Redirect if already authenticated
-  useEffect(() => {
-    // If user has a token but we haven't validated it yet, validate it first
-    if (isAuthenticated && !validationChecked) {
-      validateToken(); // This will check if the token is still valid
-      return; // Wait for validation to complete
-    }
-
-    // After validation completes, redirect if user is authenticated
-    if (isAuthenticated && validationChecked) {
-      navigate("/", { replace: true });
-    }
-  }, [isAuthenticated, validationChecked, navigate]);
+ // ❌ REMOVE the validateToken() call - ProtectedRoute handles this
+useEffect(() => {
+  // Just redirect if already authenticated
+  if (isAuthenticated && validationChecked) {
+    navigate("/", { replace: true });
+  }
+}, [isAuthenticated, validationChecked, navigate]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

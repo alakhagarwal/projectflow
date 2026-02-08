@@ -1,23 +1,47 @@
-import { StrictMode } from "react";
-import { MantineProvider } from "@mantine/core";
+import { Center, MantineProvider } from "@mantine/core";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import App from "./App.jsx";
 import "@mantine/core/styles.css";
+import "./App.css";
 import { store } from "./redux/store.jsx";
 import { Provider } from "react-redux";
 import Login from "./components/Login.jsx";
 import Register from "./components/Register.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import Team from "./components/Team.jsx";
+import Layout from "./components/Layout.jsx";
+import Dashboard from "./components/Dashboard.jsx";
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: (
       <ProtectedRoute>
-        <App />
+        <Layout />
       </ProtectedRoute>
     ),
+    children: [
+      {
+        index: true, // Default route at "/"
+        element: <Dashboard />,
+      },
+      {
+        path: "dashboard",
+        element: <Dashboard />,
+      },
+      {
+        path: "projects",
+        element: <Center>Projects Page - Coming Soon!</Center>,
+      },
+      {
+        path: "team",
+        element: <Team />,
+      },
+      {
+        path: "settings",
+        element: <Center>Settings Page - Coming Soon!</Center>,
+      },
+    ],
   },
   {
     path: "/login",
@@ -30,11 +54,9 @@ const router = createBrowserRouter([
 ]);
 
 createRoot(document.getElementById("root")).render(
-  <StrictMode>
-    <MantineProvider>
-      <Provider store={store}>
-        <RouterProvider router={router} />
-      </Provider>
-    </MantineProvider>
-  </StrictMode>,
+  <MantineProvider>
+    <Provider store={store}>
+      <RouterProvider router={router} />
+    </Provider>
+  </MantineProvider>,
 );

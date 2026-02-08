@@ -30,7 +30,7 @@ const ThemeIcon = () => (
   </svg>
 );
 
-export default function Header({ userName = "User" }) {
+export default function Header() {
   const { fullName,logout } = useAuth();
   const getInitials = (name) => {
     if (!name) return "U"; // Fallback for null/undefined

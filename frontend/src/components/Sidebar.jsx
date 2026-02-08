@@ -117,18 +117,14 @@ const PlusIcon = () => (
   </svg>
 );
 
-export default function Sidebar({ activeItem = "dashboard", onNavigate }) {
+export default function Sidebar() {
   const [orgMenuOpened, setOrgMenuOpened] = useState(false);
+  const activeItem = location.pathname.split('/')[1] || 'dashboard';
   const [selectedOrg, setSelectedOrg] = useState(null);
   const [createOrgOpened, setCreateOrgOpened] = useState(false);
   const { organizations, loading, error, loadOrganizations } = useOrg();
 
   useEffect(() => {
-    loadOrganizations();
-  }, []);
-
-  useEffect(() => {
-    // Auto-select first organization when loaded
     if (organizations.length > 0 && !selectedOrg) {
       setSelectedOrg(organizations[0]);
     }
@@ -254,30 +250,32 @@ export default function Sidebar({ activeItem = "dashboard", onNavigate }) {
       )}
 
       {!loading && !error && organizations.length === 0 && (
-        <Box p="md" style={{ 
-          backgroundColor: '#F8FAFC', 
-          borderRadius: '8px',
-          border: '1px solid #E2E8F0'
-        }}>
+        <Box
+          p="md"
+          style={{
+            backgroundColor: "#F8FAFC",
+            borderRadius: "8px",
+            border: "1px solid #E2E8F0",
+          }}
+        >
           <Text size="sm" c="dimmed" mb="sm" ta="center">
             No organizations yet
           </Text>
           <UnstyledButton
             style={{
-              width: '100%',
-              padding: '8px 12px',
-              fontSize: '14px',
+              width: "100%",
+              padding: "8px 12px",
+              fontSize: "14px",
               fontWeight: 500,
-              color: '#2563EB',
-              backgroundColor: 'white',
-              border: '1px solid #E2E8F0',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              transition: 'all 0.2s',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              
+              color: "#2563EB",
+              backgroundColor: "white",
+              border: "1px solid #E2E8F0",
+              borderRadius: "6px",
+              cursor: "pointer",
+              transition: "all 0.2s",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
             onClick={() => setCreateOrgOpened(true)}
           >
