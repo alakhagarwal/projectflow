@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import api from "../../config/api"; // Import our custom API utility
 
 const initialState = {
   token: localStorage.getItem("token") || null,
@@ -108,26 +109,18 @@ export const loginUser = createAsyncThunk(
   "auth/login",
   async (credentials, { rejectWithValue }) => {
     try {
-      const response = await fetch("http://localhost:8080/generate-token", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(credentials), // { email, password }
-      });
-      const data = await response.json();
-
-      if (!response.ok) {
-        return rejectWithValue(data.error || "Login failed");
-      }
+      // ✨ No manual JSON parsing, no response.ok check, no headers!
+      const data = await api.post("/generate-token", credentials);
 
       localStorage.setItem("token", data.token);
 
       return {
         token: data.token,
         email: data.email || credentials.email,
-        fullName: data.fullName,  // ← Capture fullName from API response
+        fullName: data.fullName, // ← Capture fullName from API response
       };
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error); // error is already transformed by api.js interceptor
     }
   },
 );
