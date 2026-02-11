@@ -11,6 +11,7 @@ import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import Team from "./components/Team.jsx";
 import Layout from "./components/Layout.jsx";
 import Dashboard from "./components/Dashboard.jsx";
+import Projects from "./components/Projects.jsx";
 
 const router = createBrowserRouter([
   {
@@ -31,7 +32,7 @@ const router = createBrowserRouter([
       },
       {
         path: "projects",
-        element: <Center>Projects Page - Coming Soon!</Center>,
+        element: <Projects />,
       },
       {
         path: "team",
