@@ -35,7 +35,8 @@ export default function CreateOrg({ opened, onClose, forced = false, onSuccess }
   const [logo, setLogo] = useState(null);
   const [logoPreview, setLogoPreview] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
-  const { addOrganization, loading, error } = useOrg();
+  const [slugError, setSlugError] = useState(null);
+  const { addOrganization, loading, error, loadOrganizations } = useOrg();
 
   // Auto-generate slug from name
   const handleNameChange = (value) => {
@@ -100,7 +101,14 @@ export default function CreateOrg({ opened, onClose, forced = false, onSuccess }
       }
     } catch (error) {
       const errorMessage = error || "Failed to create organization";
-      setErrorMsg(errorMessage);
+
+      // Show slug-specific errors on the slug field itself
+      if (typeof errorMessage === "string" && errorMessage.toLowerCase().includes("slug")) {
+        setSlugError(errorMessage);
+      } else {
+        setErrorMsg(errorMessage);
+      }
+
       notifications.show({
         title: "Error",
         message: errorMessage,
@@ -115,6 +123,7 @@ export default function CreateOrg({ opened, onClose, forced = false, onSuccess }
     setLogo(null);
     setLogoPreview(null);
     setErrorMsg(null);
+    setSlugError(null);
   };
 
   const isValid = name.trim().length > 0 && slug.trim().length > 0;
@@ -213,10 +222,14 @@ export default function CreateOrg({ opened, onClose, forced = false, onSuccess }
           label="Slug"
           placeholder="my-org"
           value={slug}
-          onChange={(e) => setSlug(e.target.value)}
+          onChange={(e) => {
+            setSlug(e.target.value);
+            setSlugError(null);
+          }}
           required
           size="md"
           description="This will be used in URLs"
+          error={slugError}
         />
 
         {/* Submit Button */}
