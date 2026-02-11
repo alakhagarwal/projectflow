@@ -60,16 +60,10 @@ export default function Login() {
   } = useAuth();
   const navigate = useNavigate();
 
-  // ADD THIS FOR DEBUGGING
-  console.log("🔍 Login Component State:", {
-    isAuthenticated,
-    validationChecked,
-    shouldRedirect: isAuthenticated && validationChecked,
-  });
-
- // ❌ REMOVE the validateToken() call - ProtectedRoute handles this
 useEffect(() => {
-  // Just redirect if already authenticated
+  if (!validationChecked) {
+    validateToken();
+  }
   if (isAuthenticated && validationChecked) {
     navigate("/", { replace: true });
   }

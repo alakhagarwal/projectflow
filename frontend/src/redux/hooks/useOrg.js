@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchOrganizations,createOrganization } from '../slices/orgSlice';
+import { fetchOrganizations,createOrganization,clearOrganizations } from '../slices/orgSlice';
 
 export const useOrg = () => {
     const dispatch = useDispatch();
@@ -13,5 +13,9 @@ export const useOrg = () => {
         return dispatch(createOrganization({ name, slug, logo }));
     }
 
-    return { organizations, loading, error, loadOrganizations, addOrganization };
+    const clearAllOrganizations = () => {
+        dispatch(clearOrganizations());
+    };
+
+    return { organizations, loading, error, loadOrganizations, addOrganization, clearAllOrganizations };
 };

@@ -7,15 +7,14 @@ import { useOrg } from "../redux/hooks/useOrg";
 import { Outlet } from "react-router-dom";
 
 function App() {
-  const [activeNav, setActiveNav] = useState("dashboard");
   const { organizations, loading, loadOrganizations } = useOrg();
   const [showForcedOrgModal, setShowForcedOrgModal] = useState(false);
 
   useEffect(() => {
-    if (!loading && organizations.length === 0) {
+    if (organizations.length === 0 && !loading) {
       loadOrganizations();
     }
-  }, []); // Keep empty deps - runs once on mount
+  }, []);
 
   useEffect(() => {
     // After loading completes, check if user has no organizations
@@ -44,12 +43,13 @@ function App() {
       </Box>
 
       {/* Forced Organization Creation Modal */}
-      <CreateOrg
-        opened={showForcedOrgModal}
-        onClose={() => {}}
-        forced={true}
-        onSuccess={() => loadOrganizations()}
-      />
+      {!loading && showForcedOrgModal && (
+        <CreateOrg
+          opened={showForcedOrgModal}
+          onClose={() => {}}
+          forced={true}
+        />
+      )}
     </Box>
   );
 }

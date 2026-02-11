@@ -1,6 +1,7 @@
 import { TextInput, Avatar, ActionIcon, Group, Box, Menu } from "@mantine/core";
 import "./Header.css";
 import { useAuth } from "../redux/hooks/useAuth";
+import { useOrg } from "../redux/hooks/useOrg";
 
 const SearchIcon = () => (
   <svg
@@ -31,6 +32,7 @@ const ThemeIcon = () => (
 );
 
 export default function Header() {
+  const {clearAllOrganizations} = useOrg();
   const { fullName,logout } = useAuth();
   const getInitials = (name) => {
     if (!name) return "U"; // Fallback for null/undefined

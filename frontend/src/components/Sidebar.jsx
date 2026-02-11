@@ -349,7 +349,6 @@ export default function Sidebar() {
       <CreateOrg
         opened={createOrgOpened}
         onClose={() => setCreateOrgOpened(false)}
-        onSuccess={() => loadOrganizations()}
       />
     </Box>
   );

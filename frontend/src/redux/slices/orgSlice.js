@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import api from "../../config/api"; // Import our custom API utility
 
 const initialState = {
   organizations: [],
@@ -11,30 +12,17 @@ export const fetchOrganizations = createAsyncThunk(
   "org/fetchOrganizations",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch("http://localhost:8080/org/getAll", {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      
-      // Check if response has content
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        if (!response.ok) {
-          return rejectWithValue(`Server error: ${response.status} ${response.statusText}`);
-        }
-        return rejectWithValue("Server returned non-JSON response");
-      }
-      
-      const data = await response.json();
-      if (!response.ok) {
-        return rejectWithValue(data.error || "Failed to fetch organizations");
-      }
+      const data = await api.get("/org/getAll");
       return data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error);
     }
+  },
+  {
+    condition: (_, { getState }) => {
+      const { org } = getState();
+      return !org.loading; // Skip if already loading
+    },
   },
 );
 
@@ -50,30 +38,10 @@ export const createOrganization = createAsyncThunk(
         formData.append("logo", logo);
       }
 
-      const response = await fetch("http://localhost:8080/org/create", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: formData,
-      });
-      
-      // Check if response has content
-      const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        if (!response.ok) {
-          return rejectWithValue(`Server error: ${response.status} ${response.statusText}`);
-        }
-        return rejectWithValue("Server returned non-JSON response");
-      }
-      
-      const data = await response.json();
-      if (!response.ok) {
-        return rejectWithValue(data.error || "Failed to create organization");
-      }
+      const data = await api.post("/org/create", formData);
       return data;
     } catch (error) {
-      return rejectWithValue(error.message);
+      return rejectWithValue(error);
     }
   },
 );
@@ -81,7 +49,13 @@ export const createOrganization = createAsyncThunk(
 const orgSlice = createSlice({
   name: "org",
   initialState,
-  reducers: {},
+  reducers: {
+    clearOrganizations: (state) => {
+      state.organizations = [];
+      state.loading = false;
+      state.error = null;
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchOrganizations.pending, (state) => {
@@ -110,5 +84,7 @@ const orgSlice = createSlice({
       });
   },
 });
+
+export const { clearOrganizations } = orgSlice.actions;
 
 export default orgSlice.reducer;

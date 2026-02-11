@@ -40,26 +40,8 @@ export const validateToken = createAsyncThunk(
         return rejectWithValue("No token found");
       }
 
-      const response = await fetch(
-        "http://localhost:8080/auth/validate-token",
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        },
-      );
+      const data = await api.get("/auth/validate-token");
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        // Token is invalid or expired
-        localStorage.removeItem("token");
-        return rejectWithValue(data.message || "Token validation failed");
-      }
-
-      // Token is valid, return user data
       return {
         email: data.email,
         fullName: data.fullName,
@@ -67,7 +49,7 @@ export const validateToken = createAsyncThunk(
       };
     } catch (error) {
       localStorage.removeItem("token");
-      return rejectWithValue("Network error during token validation");
+      return rejectWithValue(error);
     }
   },
 );
@@ -77,30 +59,10 @@ export const registerUser = createAsyncThunk(
   "auth/register",
   async (userData, { rejectWithValue }) => {
     try {
-      const response = await fetch("http://localhost:8080/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(userData), // { email, password, firstName, lastName }
-      });
-      const data = await response.json();
-
-      if (!response.ok) {
-        // Handle validation errors
-        if (data.errors && typeof data.errors === "object") {
-          // Get all error messages and combine them
-          const errorMessage = Object.values(data.errors).join(". "); // ← Remove [0]
-          return rejectWithValue(errorMessage);
-          // Shows: "Email must be valid. Password must be at least 8 characters"
-        }
-        // Handle other error formats (e.g., "Email already exists")
-        return rejectWithValue(
-          data.message || data.error || "Registration failed",
-        );
-      }
-
+      const data = await api.post("/auth/register", userData);
       return data;
     } catch (error) {
-      return rejectWithValue("Network error. Please check your connection.");
+      return rejectWithValue(error); // That's it! ✅
     }
   },
 );
