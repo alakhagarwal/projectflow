@@ -5,6 +5,7 @@ const initialState = {
   organizations: [],
   loading: false,
   error: null,
+  selectedOrganization: null
 };
 
 // Async action to fetch organizations
@@ -54,7 +55,11 @@ const orgSlice = createSlice({
       state.organizations = [];
       state.loading = false;
       state.error = null;
+      state.selectedOrganization = null;
     },
+    setSelectedOrganization: (state, action) => {
+      state.selectedOrganization = action.payload;
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -85,6 +90,6 @@ const orgSlice = createSlice({
   },
 });
 
-export const { clearOrganizations } = orgSlice.actions;
+export const { clearOrganizations, setSelectedOrganization } = orgSlice.actions;
 
 export default orgSlice.reducer;

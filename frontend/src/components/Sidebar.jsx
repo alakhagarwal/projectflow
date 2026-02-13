@@ -120,15 +120,14 @@ const PlusIcon = () => (
 export default function Sidebar() {
   const [orgMenuOpened, setOrgMenuOpened] = useState(false);
   const activeItem = location.pathname.split('/')[1] || 'dashboard';
-  const [selectedOrg, setSelectedOrg] = useState(null);
   const [createOrgOpened, setCreateOrgOpened] = useState(false);
-  const { organizations, loading, error, loadOrganizations } = useOrg();
+  const { organizations, loading, error, loadOrganizations,setSelectedOrg, selectedOrganization } = useOrg();
 
   useEffect(() => {
-    if (organizations.length > 0 && !selectedOrg) {
+    if (organizations.length > 0 && !selectedOrganization) {
       setSelectedOrg(organizations[0]);
     }
-  }, [organizations, selectedOrg]);
+  }, [organizations, selectedOrganization]);
 
   const handleOrgSelect = (org) => {
     setSelectedOrg(org);
@@ -159,21 +158,21 @@ export default function Sidebar() {
             <UnstyledButton pt={5} pb={16} className="w-full rounded-lg hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-100">
               <Group gap="sm">
                 {/* Show logo if available, otherwise show initials */}
-                {selectedOrg?.logoUrl ? (
+                {selectedOrganization?.logoUrl ? (
                   <Avatar
-                    src={selectedOrg.logoUrl}
-                    alt={selectedOrg.name}
+                    src={selectedOrganization.logoUrl}
+                    alt={selectedOrganization.name}
                     radius="md"
                     size="md"
                   />
                 ) : (
                   <Avatar color="blue" radius="md" size="md">
-                    {selectedOrg?.name.charAt(0).toUpperCase()}
+                    {selectedOrganization?.name.charAt(0).toUpperCase()}
                   </Avatar>
                 )}
                 <Box style={{ flex: 1 }}>
                   <Text size="sm" fw={600} c="dark" lineClamp={1}>
-                    {selectedOrg?.name}
+                    {selectedOrganization?.name}
                   </Text>
                   <Text size="xs" c="dimmed" mt={2}>
                     {organizations.length}{" "}
@@ -207,7 +206,7 @@ export default function Sidebar() {
                 }
                 style={{
                   backgroundColor:
-                    selectedOrg?.id === org.id ? "#EBF5FF" : "transparent",
+                    selectedOrganization?.id === org.id ? "#EBF5FF" : "transparent",
                 }}
               >
                 <Box>

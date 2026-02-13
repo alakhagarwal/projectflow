@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Box,
   Text,
@@ -13,6 +13,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import CreateProj from "./CreateProj";
 import { useOrg } from "../redux/hooks/useOrg";
+import { useProj } from "../redux/hooks/useProj";
 
 // Icons
 const SearchIcon = () => (
@@ -48,8 +49,15 @@ export default function Projects() {
   const [statusFilter, setStatusFilter] = useState(null);
   const [priorityFilter, setPriorityFilter] = useState(null);
   const [createModalOpened, setCreateModalOpened] = useState(false);
-  const { organizations } = useOrg();
+  const { organizations, selectedOrganization } = useOrg();
+  const { loadProjects } = useProj();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (selectedOrganization) {
+      loadProjects(selectedOrganization.id);
+    }
+  }, [selectedOrganization]);
 
   // Mock projects data - replace with actual data from Redux store
   const projects = [
@@ -82,7 +90,8 @@ export default function Projects() {
     const matchesSearch = project.name
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
-    const matchesStatus = !statusFilter || project.projectStatus === statusFilter;
+    const matchesStatus =
+      !statusFilter || project.projectStatus === statusFilter;
     const matchesPriority =
       !priorityFilter || project.projectPriority === priorityFilter;
     return matchesSearch && matchesStatus && matchesPriority;
