@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Modal,
   TextInput,
@@ -12,8 +12,10 @@ import {
 } from "@mantine/core";
 import { DateInput } from "@mantine/dates";
 import { notifications } from "@mantine/notifications";
+import { useOrg } from "../redux/hooks/useOrg";
+// import { useProj } from "../redux/hooks/useProj";
 
-export default function CreateProj({ opened, onClose, organizations = [] }) {
+export default function CreateProj({ opened, onClose}) {
   const [formData, setFormData] = useState({
     organizationId: null,
     name: "",
@@ -24,6 +26,17 @@ export default function CreateProj({ opened, onClose, organizations = [] }) {
     endDate: null,
     teamLeadEmail: "",
   });
+
+  const  {selectedOrganization} = useOrg();
+
+  useEffect(() => {
+    if (selectedOrganization) {
+      setFormData((prev) => ({
+        ...prev,
+        organizationId: selectedOrganization.id,
+      }));
+    }
+  }, [selectedOrganization]);
 
   const [errorMsg, setErrorMsg] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
@@ -44,12 +57,6 @@ export default function CreateProj({ opened, onClose, organizations = [] }) {
     { value: "MEDIUM", label: "Medium" },
     { value: "HIGH", label: "High" },
   ];
-
-  // Convert organizations to select options
-  const organizationOptions = organizations.map((org) => ({
-    value: org.id?.toString(),
-    label: org.name,
-  }));
 
   // Handle form field changes
   const handleChange = (field, value) => {
@@ -214,19 +221,6 @@ export default function CreateProj({ opened, onClose, organizations = [] }) {
       )}
 
       <Stack gap="lg">
-        {/* Organization Select */}
-        <Select
-          label="Organization"
-          placeholder="Select organization"
-          value={formData.organizationId}
-          onChange={(value) => handleChange("organizationId", value)}
-          data={organizationOptions}
-          required
-          size="md"
-          searchable
-          error={fieldErrors.organizationId}
-        />
-
         {/* Project Name */}
         <TextInput
           label="Project Name"

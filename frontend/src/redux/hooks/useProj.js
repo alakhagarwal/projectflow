@@ -7,6 +7,7 @@ export const useProj = () => {
 
     const loadProjects = (organizationId) => {
         dispatch(fetchProjects(organizationId));
+        console.log(projects);
     }
 
     const setProjectsLoading = (isLoading) => {
