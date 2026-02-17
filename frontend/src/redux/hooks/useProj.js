@@ -1,18 +1,18 @@
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchProjects,setLoading } from '../slices/projSlice'; 
+import { useCallback } from 'react';
+import { fetchProjects, clearProjects } from '../slices/projSlice'; 
 
 export const useProj = () => {
     const dispatch = useDispatch();
-    const { projects, loading, error } = useSelector((state) => state.proj);    
+    const { projects, loading, error, currentOrgId } = useSelector((state) => state.proj);    
 
-    const loadProjects = (organizationId) => {
+    const loadProjects = useCallback((organizationId) => {
         dispatch(fetchProjects(organizationId));
-        console.log(projects);
-    }
+    }, [dispatch]);// created once and used forever, so no need to include projects/loading/error in deps
 
-    const setProjectsLoading = (isLoading) => {
-        dispatch(setLoading(isLoading));
-    }
+    const clearAllProjects = useCallback(() => {
+        dispatch(clearProjects());
+    }, [dispatch]);
 
-    return { projects, loading, error, loadProjects, setProjectsLoading };
+    return { projects, loading, error, currentOrgId, loadProjects, clearAllProjects };
 }

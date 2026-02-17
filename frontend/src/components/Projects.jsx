@@ -50,15 +50,9 @@ export default function Projects() {
   const [statusFilter, setStatusFilter] = useState(null);
   const [priorityFilter, setPriorityFilter] = useState(null);
   const [createModalOpened, setCreateModalOpened] = useState(false);
-  const { organizations, selectedOrganization } = useOrg();
-  const { projects, loading, error, loadProjects } = useProj();
+  const { organizations } = useOrg();
+  const { projects, loading, error } = useProj();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if (selectedOrganization) {
-      loadProjects(selectedOrganization.id);
-    }
-  }, [selectedOrganization]);
 
   const statusOptions = [
     { value: "PLANNING", label: "Planning" },

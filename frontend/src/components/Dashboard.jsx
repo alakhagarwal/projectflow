@@ -1,6 +1,8 @@
-import { Box, Text, Button, Paper, Group, Badge } from "@mantine/core";
+import { Box, Text, Button, Paper, Group, Badge, Alert } from "@mantine/core";
 import StatsCard from "./StatsCard";
 import { useAuth } from "../redux/hooks/useAuth";
+import { useProj } from "../redux/hooks/useProj";
+import { useOrg } from "../redux/hooks/useOrg";
 
 // Icons
 const FolderIcon = () => (
@@ -103,18 +105,33 @@ const PersonIcon = () => (
 );
 
 export default function Dashboard() {
+  const { fullName, isValidating } = useAuth();
+  const { projects, loading, error } = useProj();
+  const { selectedOrganization } = useOrg();
+  
+  const capitalizedName = () => {
+    return fullName
+      ? fullName
+          .split(" ")
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(" ")
+      : "User";
+  };
+
+  const completedProjects = projects?.filter(p => p.projectStatus === "COMPLETED").length || 0;
+  
   const stats = [
     {
       title: "Total Projects",
-      value: "0",
-      subtitle: `projects in Org1`,
+      value: loading ? "..." : (projects?.length || 0),
+      subtitle: `projects in ${selectedOrganization?.name || "organization"}`,
       icon: <FolderIcon />,
       color: "blue",
     },
     {
       title: "Completed Projects",
-      value: "0",
-      subtitle: "of 0 total",
+      value: loading ? "..." : completedProjects,
+      subtitle: loading ? "loading..." : `of ${projects?.length || 0} total`,
       icon: <CheckCircleIcon />,
       color: "green",
     },
@@ -134,18 +151,15 @@ export default function Dashboard() {
     },
   ];
 
-  const { fullName, isValidating, validationChecked } = useAuth();
-  const capitalizedName = () => {
-    return fullName
-      ? fullName
-          .split(" ")
-          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(" ")
-      : "User";
-  };
-
   return (
     <Box p={30} className="flex-1 bg-slate-50 overflow-auto ">
+      {/* Error Alert */}
+      {error && (
+        <Alert color="red" mb="md" title="Error Loading Projects" withCloseButton>
+          {error}
+        </Alert>
+      )}
+      
       {/* Header */}
       <Group justify="space-between" align="flex-start" mb="xl">
         <Box>

@@ -5,6 +5,7 @@ const initialState = {
   projects: [],
   loading: false,
   error: null,
+  currentOrgId: null,
 };
 
 export const fetchProjects = createAsyncThunk(
@@ -12,16 +13,20 @@ export const fetchProjects = createAsyncThunk(
   async (organizationId, { rejectWithValue }) => {
     try {
       const data = await api.get(`/proj/getAll/${organizationId}`);
-      return data;
+      return { data, organizationId };
     } catch (error) {
       return rejectWithValue(error);
     }
   },
-  // Add a condition to prevent multiple simultaneous fetches
+  // Prevent duplicate fetches for the SAME org, but allow switching orgs
   {
     condition: (organizationId, { getState }) => {
       const { proj } = getState();
-      return !proj.loading;
+      // Only skip if SAME org is already loading
+      if (proj.loading && proj.currentOrgId === organizationId) {
+        return false;
+      }
+      return true;
     }
   },
 );
@@ -30,26 +35,30 @@ const projSlice = createSlice({
   name: "proj",
   initialState, 
   reducers: {
-    setLoading: (state, action) => {
-      state.loading = action.payload;
+    clearProjects: (state) => {
+      state.projects = [];
+      state.error = null;
     },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(fetchProjects.pending, (state) => {
+      .addCase(fetchProjects.pending, (state, action) => {
         state.loading = true;
         state.error = null;
+        state.currentOrgId = action.meta.arg;
       })
       .addCase(fetchProjects.fulfilled, (state, action) => {
         state.loading = false;
-        state.projects = action.payload;
+        state.projects = action.payload.data;
+        state.currentOrgId = action.payload.organizationId;
       })
       .addCase(fetchProjects.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+        state.currentOrgId = null;
       });
   },
 });
 
-export const { setLoading } = projSlice.actions;
+export const { clearProjects } = projSlice.actions;
 export default projSlice.reducer;

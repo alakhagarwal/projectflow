@@ -4,11 +4,14 @@ import Sidebar from "./Sidebar";
 import Header from "./Header";
 import CreateOrg from "./CreateOrg";
 import { useOrg } from "../redux/hooks/useOrg";
+import { useProj } from "../redux/hooks/useProj";
 import { Outlet } from "react-router-dom";
 
 function App() {
-  const { organizations, loading, loadOrganizations } = useOrg();
+  const { organizations, loading, loadOrganizations, selectedOrganization } =
+    useOrg();
   const [showForcedOrgModal, setShowForcedOrgModal] = useState(false);
+  const { loadProjects, clearAllProjects } = useProj();
 
   useEffect(() => {
     if (organizations.length === 0 && !loading) {
@@ -17,7 +20,13 @@ function App() {
   }, []);
 
   useEffect(() => {
-    // After loading completes, check if user has no organizations
+    if (selectedOrganization) {
+      clearAllProjects();
+      loadProjects(selectedOrganization.id);
+    }
+  }, [selectedOrganization?.id, loadProjects, clearAllProjects]);
+
+  useEffect(() => {
     if (!loading && organizations.length === 0) {
       setShowForcedOrgModal(true);
     } else if (organizations.length > 0) {
@@ -30,19 +39,14 @@ function App() {
       className="flex h-screen bg-slate-50"
       style={{ filter: showForcedOrgModal ? "blur(8px)" : "none" }}
     >
-      {/* Sidebar */}
       <Sidebar />
 
-      {/* Main Content */}
       <Box className="flex-1 flex flex-col">
-        {/* Header */}
         <Header />
 
-        {/* Dashboard Content */}
         <Outlet />
       </Box>
 
-      {/* Forced Organization Creation Modal */}
       {!loading && showForcedOrgModal && (
         <CreateOrg
           opened={showForcedOrgModal}
