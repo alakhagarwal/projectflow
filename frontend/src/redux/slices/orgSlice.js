@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import api from "../../config/api"; // Import our custom API utility
+import api from "../../config/api"; 
 
 const initialState = {
   organizations: [],

@@ -31,6 +31,28 @@ export const fetchProjects = createAsyncThunk(
   },
 );
 
+
+export const createProject = createAsyncThunk(
+  "projects/createProject",
+  async ({ organizationId, name, description, projectStatus, projectPriority,startDate,endDate,teamLeadEmail }, { rejectWithValue }) => {
+    try {
+      const data = await api.post("/proj/create", {
+        organizationId,
+        name,
+        description,
+        projectStatus,
+        projectPriority,
+        startDate,
+        endDate,
+        teamLeadEmail
+      });
+      return data;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  },
+);
+
 const projSlice = createSlice({
   name: "proj",
   initialState, 
@@ -56,6 +78,18 @@ const projSlice = createSlice({
         state.loading = false;
         state.error = action.payload;
         state.currentOrgId = null;
+      })
+      .addCase(createProject.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(createProject.fulfilled, (state, action) => {
+        state.loading = false;
+        state.projects.push(action.payload);
+      })
+      .addCase(createProject.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload;
       });
   },
 });

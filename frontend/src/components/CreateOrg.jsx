@@ -36,7 +36,7 @@ export default function CreateOrg({ opened, onClose, forced = false, onSuccess }
   const [logoPreview, setLogoPreview] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
   const [slugError, setSlugError] = useState(null);
-  const { addOrganization, loading, error, loadOrganizations } = useOrg();
+  const { addOrganization, loading, loadOrganizations } = useOrg();
 
   // Auto-generate slug from name
   const handleNameChange = (value) => {

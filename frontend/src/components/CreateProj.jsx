@@ -13,9 +13,10 @@ import {
 import { DateInput } from "@mantine/dates";
 import { notifications } from "@mantine/notifications";
 import { useOrg } from "../redux/hooks/useOrg";
-// import { useProj } from "../redux/hooks/useProj";
+import { useProj } from "../redux/hooks/useProj";
 
 export default function CreateProj({ opened, onClose}) {
+  const { createNewProject, loading } = useProj();
   const [formData, setFormData] = useState({
     organizationId: null,
     name: "",
@@ -40,7 +41,6 @@ export default function CreateProj({ opened, onClose}) {
 
   const [errorMsg, setErrorMsg] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
-  const [loading, setLoading] = useState(false);
 
   // Project Status options
   const projectStatusOptions = [
@@ -128,7 +128,7 @@ export default function CreateProj({ opened, onClose}) {
     }
 
     try {
-      setLoading(true);
+
 
       // Prepare payload (format dates as YYYY-MM-DD)
       const payload = {
@@ -146,8 +146,7 @@ export default function CreateProj({ opened, onClose}) {
         teamLeadEmail: formData.teamLeadEmail.trim(),
       };
 
-      // TODO: API call will be implemented later
-      console.log("Project payload:", payload);
+      await createNewProject(payload).unwrap();
 
       // Show success notification
       notifications.show({
@@ -160,7 +159,7 @@ export default function CreateProj({ opened, onClose}) {
       onClose();
       resetForm();
     } catch (error) {
-      const errorMessage = error?.message || "Failed to create project";
+      const errorMessage = error || "Failed to create project";
       setErrorMsg(errorMessage);
 
       notifications.show({
@@ -168,9 +167,7 @@ export default function CreateProj({ opened, onClose}) {
         message: errorMessage,
         color: "red",
       });
-    } finally {
-      setLoading(false);
-    }
+    } 
   };
 
   // Reset form
