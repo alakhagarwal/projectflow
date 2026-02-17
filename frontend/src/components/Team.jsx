@@ -1,6 +1,20 @@
-import { useState } from "react";
-import { Box, Text, Button, Paper, TextInput, Table, Avatar, Badge, Group, SimpleGrid } from "@mantine/core";
+import { useEffect, useState } from "react";
+import {
+  Box,
+  Text,
+  Button,
+  Paper,
+  TextInput,
+  Table,
+  Avatar,
+  Badge,
+  Group,
+  SimpleGrid,
+} from "@mantine/core";
 import StatsCard from "./StatsCard";
+import { useMember } from "../redux/hooks/useMember";
+import { useOrg } from "../redux/hooks/useOrg";
+import { useProj } from "../redux/hooks/useProj";
 
 // Icons
 const UsersIcon = () => (
@@ -87,17 +101,21 @@ const UserPlusIcon = () => (
 
 export default function Team() {
   const [searchQuery, setSearchQuery] = useState("");
+  const { members, loading, error, loadMembers } = useMember();
+  const { selectedOrganization } = useOrg();
+  const { projects } = useProj();
 
-  // Mock data for UI display
-  const members = [
-    {
-      id: 1,
-      firstName: "Alakh",
-      lastName: "Agarwal",
-      email: "agarwalalakh2004@gmail.com",
-      organizationRole: "ADMIN",
-    },
-  ];
+  useEffect(() => {
+    if (selectedOrganization?.id && !loading) {
+      loadMembers(selectedOrganization.id);
+    }
+  }, [loadMembers, selectedOrganization?.id]);
+
+  const activemembers = members.filter(
+    (member) => member.memberStatus === "ACTIVE",
+  );
+
+  const activeProjects = projects.filter((project) => project.status === "ACTIVE");
 
   const filteredMembers = members.filter((member) => {
     const searchLower = searchQuery.toLowerCase();
@@ -116,8 +134,23 @@ export default function Team() {
 
   // Get avatar color based on name
   const getAvatarColor = (name) => {
-    const colors = ["red", "pink", "grape", "violet", "indigo", "blue", "cyan", "teal", "green", "lime", "yellow", "orange"];
-    const index = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const colors = [
+      "red",
+      "pink",
+      "grape",
+      "violet",
+      "indigo",
+      "blue",
+      "cyan",
+      "teal",
+      "green",
+      "lime",
+      "yellow",
+      "orange",
+    ];
+    const index = name
+      .split("")
+      .reduce((acc, char) => acc + char.charCodeAt(0), 0);
     return colors[index % colors.length];
   };
 
@@ -147,13 +180,13 @@ export default function Team() {
       <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="lg" mb="xl">
         <StatsCard
           title="Total Members"
-          value={1}
+          value={activemembers.length}
           icon={<UsersIcon />}
           color="blue"
         />
         <StatsCard
           title="Active Projects"
-          value={0}
+          value={activeProjects.length}
           icon={<ActivityIcon />}
           color="green"
         />
@@ -176,6 +209,12 @@ export default function Team() {
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.currentTarget.value)}
       />
+
+      {error && (
+        <Text color="red" mb="xl">
+          {error}
+        </Text>
+      )}
 
       {/* Members Table */}
       <Paper radius="lg" className="border border-gray-100 overflow-hidden">
@@ -233,7 +272,9 @@ export default function Team() {
                   <Table.Td>
                     <Badge
                       variant="light"
-                      color={member.organizationRole === "ADMIN" ? "violet" : "blue"}
+                      color={
+                        member.organizationRole === "ADMIN" ? "violet" : "blue"
+                      }
                       size="lg"
                       radius="sm"
                     >
