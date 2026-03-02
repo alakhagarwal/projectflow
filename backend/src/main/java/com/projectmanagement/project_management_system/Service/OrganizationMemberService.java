@@ -48,6 +48,7 @@ public class OrganizationMemberService {
 
 
         return members.stream()
+                .filter(member -> member.getMemberStatus() == MemberStatus.ACTIVE)
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }

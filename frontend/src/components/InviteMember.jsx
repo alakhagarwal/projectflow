@@ -8,8 +8,11 @@ import {
   Stack,
   Select,
   Group,
+  Alert,
 } from "@mantine/core";
 import { useOrg } from "../redux/hooks/useOrg";
+import { useMember } from "../redux/hooks/useMember";
+import { notifications } from "@mantine/notifications";
 
 const EmailIcon = () => (
   <svg
@@ -49,7 +52,7 @@ export default function InviteMember({ opened, onClose }) {
   const { selectedOrganization } = useOrg();
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("MEMBER");
-  const [loading, setLoading] = useState(false);
+  const { inviteNewMember, inviteError, loading } = useMember();
 
   // Role options matching the backend enum
   const roleOptions = [
@@ -59,27 +62,25 @@ export default function InviteMember({ opened, onClose }) {
 
   // Handle form submission
   const handleSubmit = async () => {
-    // TODO: Implement API call to invite member
-    // API endpoint: POST /org/{orgId}/invite
-    // Body: { email, role }
-    
-    console.log("Inviting member:", {
-      organizationId: selectedOrganization?.id,
-      email,
-      role,
-    });
-    
-    // Placeholder for API logic
-    // setLoading(true);
-    // try {
-    //   await inviteMemberAPI(selectedOrganization.id, email, role);
-    //   // Show success notification
-    //   // Close modal and reset form
-    // } catch (error) {
-    //   // Show error notification
-    // } finally {
-    //   setLoading(false);
-    // }
+
+
+    try {
+      await inviteNewMember(selectedOrganization.id, email, role).unwrap();
+
+      notifications.show({
+        title: "Success",
+        message: `Invitation sent to ${email}`,
+        color: "green",
+      });
+
+      onClose();
+      setEmail("");
+      setRole("MEMBER");
+    } catch (err) {
+      console.error("Failed to invite member:", err);
+    }
+
+
   };
 
   // Reset form
@@ -123,6 +124,15 @@ export default function InviteMember({ opened, onClose }) {
         },
       }}
     >
+      {inviteError && (
+        <Alert
+          color="red"
+          mb="md"
+        >
+          {inviteError}
+        </Alert>
+      )}
+
       {/* Workspace Info */}
       <Box mb="lg">
         <Text size="sm" c="dimmed">
@@ -165,12 +175,7 @@ export default function InviteMember({ opened, onClose }) {
 
         {/* Action Buttons */}
         <Group justify="flex-end" gap="sm" mt="md">
-          <Button
-            variant="subtle"
-            color="gray"
-            onClick={handleClose}
-            size="md"
-          >
+          <Button variant="subtle" color="gray" onClick={handleClose} size="md">
             Cancel
           </Button>
           <Button

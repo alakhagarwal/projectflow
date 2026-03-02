@@ -5,6 +5,7 @@ const initialState = {
   members: [],
   loading: false,
   error: null,
+  inviteError: null
 };
 
 export const fetchMembers = createAsyncThunk(
@@ -39,6 +40,7 @@ export const inviteMember = createAsyncThunk(
 );
 
 
+
 const memberSlice = createSlice({
   name: "team",
   initialState,
@@ -47,6 +49,7 @@ const memberSlice = createSlice({
       state.members = [];
       state.loading = false;
       state.error = null;
+      state.inviteError = null;
     },
   },
   extraReducers: (builder) => {
@@ -65,7 +68,7 @@ const memberSlice = createSlice({
       })
       .addCase(inviteMember.pending, (state) => {
         state.loading = true;
-        state.error = null;
+        state.inviteError = null;
       })
       .addCase(inviteMember.fulfilled, (state, action) => {
         state.loading = false;
@@ -73,7 +76,7 @@ const memberSlice = createSlice({
       })
       .addCase(inviteMember.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload || "Failed to invite member";
+        state.inviteError = action.payload || "Failed to invite member";
       });
   },
 });
