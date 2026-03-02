@@ -15,6 +15,7 @@ import StatsCard from "./StatsCard";
 import { useMember } from "../redux/hooks/useMember";
 import { useOrg } from "../redux/hooks/useOrg";
 import { useProj } from "../redux/hooks/useProj";
+import InviteMember from "./InviteMember";
 
 // Icons
 const UsersIcon = () => (
@@ -102,6 +103,7 @@ const UserPlusIcon = () => (
 export default function Team() {
   const [searchQuery, setSearchQuery] = useState("");
   const { members, loading, error, loadMembers } = useMember();
+  const [inviteMemberopened, setInviteMemberOpened] = useState(false);
   const { selectedOrganization } = useOrg();
   const { projects } = useProj();
 
@@ -115,7 +117,9 @@ export default function Team() {
     (member) => member.memberStatus === "ACTIVE",
   );
 
-  const activeProjects = projects.filter((project) => project.status === "ACTIVE");
+  const activeProjects = projects.filter(
+    (project) => project.status === "ACTIVE",
+  );
 
   const filteredMembers = members.filter((member) => {
     const searchLower = searchQuery.toLowerCase();
@@ -171,6 +175,7 @@ export default function Team() {
           size="md"
           radius="md"
           className="bg-blue-500 hover:bg-blue-600"
+          onClick={()=> setInviteMemberOpened(true)}
         >
           Invite Member
         </Button>
@@ -287,6 +292,11 @@ export default function Team() {
           </Table.Tbody>
         </Table>
       </Paper>
+
+      <InviteMember
+        opened={inviteMemberopened}
+        onClose={() => setInviteMemberOpened(false)}
+      />
     </Box>
   );
 }
