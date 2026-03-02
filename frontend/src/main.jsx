@@ -12,6 +12,7 @@ import Team from "./components/Team.jsx";
 import Layout from "./components/Layout.jsx";
 import Dashboard from "./components/Dashboard.jsx";
 import Projects from "./components/Projects.jsx";
+import AcceptInvite from "./components/AcceptInvite.jsx";
 import { Notifications } from "@mantine/notifications";
 
 const router = createBrowserRouter([
@@ -53,11 +54,15 @@ const router = createBrowserRouter([
     path: "/register",
     element: <Register />,
   },
+  {
+    path: "/accept-invite",
+    element: <AcceptInvite />,
+  },
 ]);
 
 createRoot(document.getElementById("root")).render(
   <MantineProvider>
-    <Notifications position="bottom-left" />
+    <Notifications position="top-right" />
     <Provider store={store}>
       <RouterProvider router={router} />
     </Provider>

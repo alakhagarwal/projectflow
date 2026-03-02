@@ -1,5 +1,5 @@
 import {useDispatch, useSelector} from 'react-redux';
-import {fetchMembers,inviteMember} from '../slices/memberSlice';
+import {fetchMembers,inviteMember,acceptInvite} from '../slices/memberSlice';
 import { useCallback } from 'react';
 
 export const useMember = () => {
@@ -17,7 +17,21 @@ export const useMember = () => {
         return dispatch(inviteMember({ orgId, email, role }));
     }, [dispatch]);
 
-    return { members, loading, error, inviteError, loadMembers, inviteNewMember };
+    
+
+    const acceptInviteMember = useCallback((orgId, token) => {
+        return dispatch(acceptInvite({ orgId, token }));
+    }, [dispatch]);
+
+    return {
+        members,
+        inviteError,
+        loading,
+        error,
+        loadMembers,
+        inviteNewMember,
+        acceptInviteMember
+    };
 };
 
 export default useMember;

@@ -40,6 +40,18 @@ export const inviteMember = createAsyncThunk(
 );
 
 
+export const acceptInvite = createAsyncThunk(
+  "team/acceptInvite",
+  async ({ orgId, token }, { rejectWithValue }) => {
+    try {
+      const data = await api.post(`/org/accept-invite?token=${token}`);
+      return data;
+    } catch (error) {
+      return rejectWithValue(error || "Failed to accept invite");
+    }
+  },
+);
+
 
 const memberSlice = createSlice({
   name: "team",
