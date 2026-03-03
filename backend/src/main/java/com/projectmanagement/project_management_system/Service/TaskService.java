@@ -1,6 +1,7 @@
 package com.projectmanagement.project_management_system.Service;
 
 import com.projectmanagement.project_management_system.DTO.CreateProjDTO;
+import com.projectmanagement.project_management_system.DTO.ProjResponse;
 import com.projectmanagement.project_management_system.DTO.TaskCreateDTO;
 import com.projectmanagement.project_management_system.DTO.TaskResponseDTO;
 import com.projectmanagement.project_management_system.Entity.Project;
@@ -19,6 +20,8 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class TaskService {
@@ -27,6 +30,7 @@ public class TaskService {
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
+    private final ProjectService projectService;
 
     @Transactional
     public TaskResponseDTO createTask(TaskCreateDTO taskCreateDTO, String createdByEmail, Long projectId) {
@@ -78,6 +82,35 @@ public class TaskService {
     }
 
 
+    public List<TaskResponseDTO> getTaskById(Long orgID, String username) {
+        User user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+       List <ProjResponse> projects = projectService.getAllProjects(orgID);
+
+        List<TaskResponseDTO> taskResponseDTOS = taskRepository.findBy(orgID).stream().map(task -> {
+            TaskResponseDTO responseDTO = new TaskResponseDTO();
+            responseDTO.setId(task.getId());
+            responseDTO.setTitle(task.getTitle());
+            responseDTO.setDescription(task.getDescription());
+            responseDTO.setProjectId(task.getProject().getId());
+            responseDTO.setAssignedToEmail(task.getAssignedTo().getEmail());
+            responseDTO.setCreatedByEmail(task.getCreatedBy().getEmail());
+            responseDTO.setDueDate(task.getDueDate());
+            responseDTO.setTaskType(task.getTaskType());
+            responseDTO.setTaskPriority(task.getTaskPriority());
+            responseDTO.setTaskStatus(task.getTaskStatus());
+
+            responseDTO.setProjectName(task.getProject().getName());
+            responseDTO.setAssignedToName(task.getAssignedTo().getFirstName() + " " + task.getAssignedTo().getLastName());
+            responseDTO.setCreatedByName(task.getCreatedBy().getFirstName() + " " + task.getCreatedBy().getLastName());
+            responseDTO.setCreatedAt(task.getCreatedAt());
+
+            return responseDTO;
+        }).toList();
+
+        return taskResponseDTOS;
 
 
+    }
 }
