@@ -113,6 +113,12 @@ export default function Team() {
     }
   }, [loadMembers, selectedOrganization?.id]);
 
+// On ANY mount after the first:
+
+// React compares current dependency values with previous dependency values
+// If ANY dependency changed → Effect runs ✅
+// If ALL dependencies are the same → Effect skips ❌
+
   const activemembers = members.filter(
     (member) => member.memberStatus === "ACTIVE",
   );

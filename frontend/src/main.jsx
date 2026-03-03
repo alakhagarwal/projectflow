@@ -12,6 +12,7 @@ import Team from "./components/Team.jsx";
 import Layout from "./components/Layout.jsx";
 import Dashboard from "./components/Dashboard.jsx";
 import Projects from "./components/Projects.jsx";
+import ProjectDetails from "./components/ProjectDetails.jsx";
 import AcceptInvite from "./components/AcceptInvite.jsx";
 import { Notifications } from "@mantine/notifications";
 
@@ -37,16 +38,16 @@ const router = createBrowserRouter([
         element: <Projects />,
       },
       {
+        path: "projects/:projectId",
+        element: <ProjectDetails />, // in the outlet of layout
+      },
+      {
         path: "team",
         element: <Team />,
       },
       {
         path: "settings",
         element: <Center>Settings Page - Coming Soon!</Center>,
-      },
-      {
-        path: "projectDetails/:projectId",
-        element: <Center>Project Details Page - Coming Soon!</Center>,
       }
     ],
   },
