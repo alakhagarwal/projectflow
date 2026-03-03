@@ -28,8 +28,8 @@ public class TaskController {
     }
 
     @GetMapping("/fetch/{orgID}")
-    public ResponseEntity<?> getTasksById(@PathVariable Long orgID, @AuthenticationPrincipal UserDetails userDetails) {
-        List<TaskResponseDTO> taskResponseDTOS = taskService.getTaskById(orgID, userDetails.getUsername());
+    public ResponseEntity<?> getTasksByOrganization(@PathVariable Long orgID, @AuthenticationPrincipal UserDetails userDetails) {
+        List<TaskResponseDTO> taskResponseDTOS = taskService.getTasksByOrganization(orgID, userDetails.getUsername());
         return ResponseEntity.ok(taskResponseDTOS);
     }
 }

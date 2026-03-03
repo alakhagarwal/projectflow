@@ -1,7 +1,5 @@
 package com.projectmanagement.project_management_system.Service;
 
-import com.projectmanagement.project_management_system.DTO.CreateProjDTO;
-import com.projectmanagement.project_management_system.DTO.ProjResponse;
 import com.projectmanagement.project_management_system.DTO.TaskCreateDTO;
 import com.projectmanagement.project_management_system.DTO.TaskResponseDTO;
 import com.projectmanagement.project_management_system.Entity.Project;
@@ -14,9 +12,7 @@ import com.projectmanagement.project_management_system.Repository.ProjectMemberR
 import com.projectmanagement.project_management_system.Repository.ProjectRepository;
 import com.projectmanagement.project_management_system.Repository.TaskRepository;
 import com.projectmanagement.project_management_system.Repository.UserRepository;
-import jakarta.transaction.TransactionScoped;
 import jakarta.transaction.Transactional;
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -30,7 +26,6 @@ public class TaskService {
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
-    private final ProjectService projectService;
 
     @Transactional
     public TaskResponseDTO createTask(TaskCreateDTO taskCreateDTO, String createdByEmail, Long projectId) {
@@ -82,13 +77,31 @@ public class TaskService {
     }
 
 
-    public List<TaskResponseDTO> getTaskById(Long orgID, String username) {
+    public List<TaskResponseDTO> getTasksByOrganization(Long orgID, String username) {
+        // Get the user
         User user = userRepository.findByEmail(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-       List <ProjResponse> projects = projectService.getAllProjects(orgID);
+        // Get all projects in the organization
+        List<Project> projectsInOrg = projectRepository.findByOrganizationId(orgID);
 
-        List<TaskResponseDTO> taskResponseDTOS = taskRepository.findBy(orgID).stream().map(task -> {
+        // Filter to only projects where the user is a member
+        List<Project> userProjects = projectsInOrg.stream()
+                .filter(project -> projectMemberRepository.existsByUserIdAndProjectId(user.getId(), project.getId()))
+                .toList();
+
+        // If user is not a member of any project in this org, return empty list
+        if (userProjects.isEmpty()) {
+            return List.of();
+        }
+
+        // Get all tasks from the projects the user is a member of
+        List<Task> tasks = userProjects.stream()
+                .flatMap(project -> taskRepository.findByProjectId(project.getId()).stream())
+                .toList();
+
+        // Map tasks to DTOs
+        return tasks.stream().map(task -> {
             TaskResponseDTO responseDTO = new TaskResponseDTO();
             responseDTO.setId(task.getId());
             responseDTO.setTitle(task.getTitle());
@@ -108,8 +121,6 @@ public class TaskService {
 
             return responseDTO;
         }).toList();
-
-        return taskResponseDTOS;
 
 
     }

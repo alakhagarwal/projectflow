@@ -44,6 +44,10 @@ const router = createBrowserRouter([
         path: "settings",
         element: <Center>Settings Page - Coming Soon!</Center>,
       },
+      {
+        path: "projectDetails/:projectId",
+        element: <Center>Project Details Page - Coming Soon!</Center>,
+      }
     ],
   },
   {

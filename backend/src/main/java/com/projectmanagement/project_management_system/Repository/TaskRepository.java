@@ -81,6 +81,4 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     // Check if task exists by id and project id
     boolean existsByIdAndProjectId(Long taskId, Long projectId);
-
-    List<Task> findBy(Long orgID);
 }
