@@ -1,19 +1,11 @@
-import { useState, useMemo } from "react";
-import {
-  Box,
-  Text,
-  Button,
-  Paper,
-  Group,
-  Badge,
-  Select,
-} from "@mantine/core";
+import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { Box, Paper, Group, Text, Badge, Button, Select, Table } from "@mantine/core";
 import { useProj } from "../redux/hooks/useProj";
 import { useTask } from "../redux/hooks/useTask";
-import StatsCard from "./StatsCard";
+import CreateTask from "./CreateTask";
+import ManageProjectMembers from "./ManageProjectMembers";
 
-// ── Icons ──────────────────────────────────────────────────────────────────────
 const ArrowLeftIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <path d="M19 12H5M12 5l-7 7 7 7" />
@@ -64,188 +56,247 @@ const BoltIcon = ({ color = "currentColor" }) => (
   </svg>
 );
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
-const PROJECT_STATUS_COLOR = {
-  PLANNING: "gray",
-  ACTIVE: "blue",
-  COMPLETED: "green",
-  ON_HOLD: "yellow",
-  CANCELLED: "red",
-};
-
-
-
-// ── Task table ─────────────────────────────────────────────────────────────────
 const TASK_STATUS_COLOR = {
-  TODO: "gray",
-  IN_PROGRESS: "blue",
-  IN_REVIEW: "yellow",
-  COMPLETED: "green",
-  CANCELLED: "red",
+  TODO: "bg-slate-100 text-slate-700",
+  IN_PROGRESS: "bg-blue-50 text-blue-700",
+  IN_REVIEW: "bg-yellow-50 text-yellow-700",
+  COMPLETED: "bg-emerald-50 text-emerald-700",
+  CANCELLED: "bg-red-50 text-red-700",
 };
 
 const TASK_PRIORITY_COLOR = {
-  LOW: "green",
-  MEDIUM: "yellow",
-  HIGH: "orange",
-  CRITICAL: "red",
+  LOW: "bg-emerald-50 text-emerald-700",
+  MEDIUM: "bg-yellow-50 text-yellow-700",
+  HIGH: "bg-orange-50 text-orange-700",
+  CRITICAL: "bg-red-50 text-red-700",
 };
 
-function TasksView({ tasks, onNewTask }) {
-  const [statusFilter, setStatusFilter] = useState(null);
-  const [typeFilter, setTypeFilter] = useState(null);
-  const [priorityFilter, setPriorityFilter] = useState(null);
-  const [assigneeFilter, setAssigneeFilter] = useState(null);
+const PROJECT_STATUS_CLASS = {
+  PLANNING: "bg-slate-400 text-white",
+  ACTIVE: "bg-blue-500 text-white",
+  COMPLETED: "bg-emerald-500 text-white",
+  ON_HOLD: "bg-yellow-500 text-white",
+  CANCELLED: "bg-red-500 text-white",
+};
 
-  const filtered = useMemo(() => {
-    return (tasks || []).filter((t) => {
-      if (statusFilter && t.status !== statusFilter) return false;
-      if (typeFilter && t.taskType !== typeFilter) return false;
-      if (priorityFilter && t.priority !== priorityFilter) return false;
-      if (assigneeFilter && String(t.assigneeId) !== assigneeFilter) return false;
-      return true;
-    });
-  }, [tasks, statusFilter, typeFilter, priorityFilter, assigneeFilter]);
-
-  const assigneeOptions = useMemo(() => {
-    const seen = new Set();
-    const opts = [];
-    (tasks || []).forEach((t) => {
-      if (t.assigneeId && !seen.has(t.assigneeId)) {
-        seen.add(t.assigneeId);
-        opts.push({ value: String(t.assigneeId), label: t.assigneeName || `User ${t.assigneeId}` });
-      }
-    });
-    return opts;
-  }, [tasks]);
-
-  return (
-    <Box>
-      {/* Filter row */}
-      <Group gap="sm" mb="lg" wrap="wrap">
-        <Select
-          placeholder="All Statuses"
-          data={[
-            { value: "TODO", label: "To Do" },
-            { value: "IN_PROGRESS", label: "In Progress" },
-            { value: "IN_REVIEW", label: "In Review" },
-            { value: "COMPLETED", label: "Completed" },
-            { value: "CANCELLED", label: "Cancelled" },
-          ]}
-          value={statusFilter}
-          onChange={setStatusFilter}
-          clearable
-          size="sm"
-          radius="md"
-          styles={{ input: { minWidth: 130 } }}
-        />
-        <Select
-          placeholder="All Types"
-          data={[
-            { value: "FEATURE", label: "Feature" },
-            { value: "BUG", label: "Bug" },
-            { value: "IMPROVEMENT", label: "Improvement" },
-            { value: "TASK", label: "Task" },
-          ]}
-          value={typeFilter}
-          onChange={setTypeFilter}
-          clearable
-          size="sm"
-          radius="md"
-          styles={{ input: { minWidth: 120 } }}
-        />
-        <Select
-          placeholder="All Priorities"
-          data={[
-            { value: "LOW", label: "Low" },
-            { value: "MEDIUM", label: "Medium" },
-            { value: "HIGH", label: "High" },
-            { value: "CRITICAL", label: "Critical" },
-          ]}
-          value={priorityFilter}
-          onChange={setPriorityFilter}
-          clearable
-          size="sm"
-          radius="md"
-          styles={{ input: { minWidth: 130 } }}
-        />
-        <Select
-          placeholder="All Assignees"
-          data={assigneeOptions}
-          value={assigneeFilter}
-          onChange={setAssigneeFilter}
-          clearable
-          size="sm"
-          radius="md"
-          styles={{ input: { minWidth: 140 } }}
-        />
-      </Group>
-
-      {/* Table */}
-      <Paper radius="lg" className="border border-gray-100 overflow-hidden">
-        {/* Table header */}
-        <div className="grid grid-cols-[32px_2fr_1fr_1fr_1fr_1fr_1fr] gap-3 px-5 py-3 border-b border-gray-100 bg-gray-50">
-          <div className="flex items-center">
-            <div className="w-3 h-3 rounded-full bg-blue-500" />
-          </div>
-          {["TITLE", "TYPE", "PRIORITY", "STATUS", "ASSIGNEE", "DUE DATE"].map((col) => (
-            <Text key={col} size="xs" fw={700} c="dimmed" className="tracking-wide">
-              {col}
-            </Text>
-          ))}
-        </div>
-
-        {/* Rows */}
-        {filtered.length === 0 ? (
-          <Box className="flex items-center justify-center py-16">
-            <Text c="dimmed" size="sm">No tasks found for the selected filters.</Text>
-          </Box>
-        ) : (
-          filtered.map((task) => (
-            <div
-              key={task.id}
-              className="grid grid-cols-[32px_2fr_1fr_1fr_1fr_1fr_1fr] gap-3 px-5 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer items-center"
-            >
-              <div className="flex items-center">
-                <div className="w-2.5 h-2.5 rounded-full bg-blue-400" />
-              </div>
-              <Text size="sm" fw={500} className="text-gray-800 truncate">{task.title}</Text>
-              <Text size="sm" c="dimmed" className="truncate">
-                {task.taskType ? task.taskType.charAt(0) + task.taskType.slice(1).toLowerCase() : "—"}
-              </Text>
-              <Badge
-                size="sm"
-                variant="light"
-                color={TASK_PRIORITY_COLOR[task.priority] || "gray"}
-              >
-                {task.priority ? task.priority.charAt(0) + task.priority.slice(1).toLowerCase() : "—"}
-              </Badge>
-              <Badge
-                size="sm"
-                variant="light"
-                color={TASK_STATUS_COLOR[task.status] || "gray"}
-              >
-                {task.status ? task.status.replace("_", " ") : "—"}
-              </Badge>
-              <Text size="sm" c="dimmed">{task.assigneeName || "Unassigned"}</Text>
-              <Text size="sm" c="dimmed">
-                {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "—"}
-              </Text>
-            </div>
-          ))
-        )}
-      </Paper>
-    </Box>
-  );
-}
-
-// ── Main component ─────────────────────────────────────────────────────────────
 const TABS = [
   { id: "tasks", label: "Tasks", icon: <TasksTabIcon /> },
   { id: "calendar", label: "Calendar", icon: <CalendarTabIcon /> },
   { id: "analytics", label: "Analytics", icon: <AnalyticsTabIcon /> },
   { id: "settings", label: "Settings", icon: <SettingsTabIcon /> },
 ];
+
+const formatEnumLabel = (value) => {
+  if (!value) return "-";
+  return value
+    .split("_")
+    .map((part) => part.charAt(0) + part.slice(1).toLowerCase())
+    .join(" ");
+};
+
+function ProjectStatCard({ title, value, icon, valueClassName = "text-slate-900" }) {
+  return (
+    <Paper
+      radius="lg"
+      p="lg"
+      className="border border-gray-100"
+    >
+      <Group justify="space-between" align="flex-start">
+        <Box>
+          <Text size="sm" c="dimmed" fw={500}>
+            {title}
+          </Text>
+          <Text size="2rem" fw={700} mt={4} className={valueClassName}>
+            {value}
+          </Text>
+        </Box>
+        <Box className="text-slate-800">{icon}</Box>
+      </Group>
+    </Paper>
+  );
+}
+
+function FilterSelect({ value, onChange, options, placeholder }) {
+  return (
+    <Select
+      value={value}
+      onChange={onChange}
+      data={options}
+      placeholder={placeholder}
+      clearable
+      size="sm"
+      radius="md"
+      style={{ minWidth: 190 }}
+    />
+  );
+}
+
+function TasksView({ tasks }) {
+  const [statusFilter, setStatusFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [priorityFilter, setPriorityFilter] = useState("");
+  const [assigneeFilter, setAssigneeFilter] = useState("");
+
+  const filtered = useMemo(() => {
+    return (tasks || []).filter((task) => {
+      if (statusFilter && task.status !== statusFilter) return false;
+      if (typeFilter && task.taskType !== typeFilter) return false;
+      if (priorityFilter && task.priority !== priorityFilter) return false;
+      if (assigneeFilter && String(task.assigneeId) !== assigneeFilter) return false;
+      return true;
+    });
+  }, [assigneeFilter, priorityFilter, statusFilter, tasks, typeFilter]);
+
+  const assigneeOptions = useMemo(() => {
+    const seen = new Set();
+    const options = [];
+
+    (tasks || []).forEach((task) => {
+      if (task.assigneeId && !seen.has(task.assigneeId)) {
+        seen.add(task.assigneeId);
+        options.push({
+          value: String(task.assigneeId),
+          label: task.assigneeName || `User ${task.assigneeId}`,
+        });
+      }
+    });
+
+    return options;
+  }, [tasks]);
+
+  return (
+    <Box>
+      <Box mb={20} className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <FilterSelect
+          value={statusFilter}
+          onChange={setStatusFilter}
+          placeholder="All Statuses"
+          options={[
+            { value: "TODO", label: "To Do" },
+            { value: "IN_PROGRESS", label: "In Progress" },
+            { value: "IN_REVIEW", label: "In Review" },
+            { value: "COMPLETED", label: "Completed" },
+            { value: "CANCELLED", label: "Cancelled" },
+          ]}
+        />
+        <FilterSelect
+          value={typeFilter}
+          onChange={setTypeFilter}
+          placeholder="All Types"
+          options={[
+            { value: "FEATURE", label: "Feature" },
+            { value: "BUG", label: "Bug" },
+            { value: "IMPROVEMENT", label: "Improvement" },
+            { value: "TASK", label: "Task" },
+          ]}
+        />
+        <FilterSelect
+          value={priorityFilter}
+          onChange={setPriorityFilter}
+          placeholder="All Priorities"
+          options={[
+            { value: "LOW", label: "Low" },
+            { value: "MEDIUM", label: "Medium" },
+            { value: "HIGH", label: "High" },
+            { value: "CRITICAL", label: "Critical" },
+          ]}
+        />
+        <FilterSelect
+          value={assigneeFilter}
+          onChange={setAssigneeFilter}
+          placeholder="All Assignees"
+          options={assigneeOptions}
+        />
+      </Box>
+
+      <Paper radius="lg" withBorder className="border-gray-100 overflow-hidden">
+        <Box className="overflow-x-auto">
+          <Table highlightOnHover verticalSpacing="md">
+            <Table.Thead className="bg-gray-50">
+              <Table.Tr>
+                <Table.Th style={{ width: 32 }} />
+                <Table.Th>Title</Table.Th>
+                <Table.Th>Type</Table.Th>
+                <Table.Th>Priority</Table.Th>
+                <Table.Th>Status</Table.Th>
+                <Table.Th>Assignee</Table.Th>
+                <Table.Th>Due date</Table.Th>
+              </Table.Tr>
+            </Table.Thead>
+            <Table.Tbody>
+              {filtered.length === 0 ? (
+                <Table.Tr>
+                  <Table.Td colSpan={7}>
+                    <Text c="dimmed" ta="center" py="lg">
+                      No tasks found for the selected filters.
+                    </Text>
+                  </Table.Td>
+                </Table.Tr>
+              ) : (
+                filtered.map((task) => (
+                  <Table.Tr key={task.id}>
+                    <Table.Td>
+                      <Box className="h-2.5 w-2.5 rounded-full bg-blue-400" />
+                    </Table.Td>
+                    <Table.Td>
+                      <Text size="sm" fw={500} lineClamp={1}>
+                        {task.title}
+                      </Text>
+                    </Table.Td>
+                    <Table.Td>
+                      <Text size="sm" c="dimmed">
+                        {formatEnumLabel(task.taskType)}
+                      </Text>
+                    </Table.Td>
+                    <Table.Td>
+                      <Badge
+                        size="sm"
+                        radius="sm"
+                        className={TASK_PRIORITY_COLOR[task.priority] || "bg-slate-100 text-slate-700"}
+                      >
+                        {formatEnumLabel(task.priority)}
+                      </Badge>
+                    </Table.Td>
+                    <Table.Td>
+                      <Badge
+                        size="sm"
+                        radius="sm"
+                        className={TASK_STATUS_COLOR[task.status] || "bg-slate-100 text-slate-700"}
+                      >
+                        {formatEnumLabel(task.status)}
+                      </Badge>
+                    </Table.Td>
+                    <Table.Td>
+                      <Text size="sm" c="dimmed">
+                        {task.assigneeName || "Unassigned"}
+                      </Text>
+                    </Table.Td>
+                    <Table.Td>
+                      <Text size="sm" c="dimmed">
+                        {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "-"}
+                      </Text>
+                    </Table.Td>
+                  </Table.Tr>
+                ))
+              )}
+            </Table.Tbody>
+          </Table>
+        </Box>
+      </Paper>
+    </Box>
+  );
+}
+
+function ComingSoonPanel({ icon, title }) {
+  return (
+    <Paper radius="lg" withBorder p="xl" className="border-slate-200 bg-white">
+      <Box py={40} className="flex flex-col items-center justify-center text-center">
+        <Box mb={16} p={24} className="rounded-2xl bg-slate-100 text-slate-500">{icon}</Box>
+        <p className="text-lg font-medium text-slate-700">{title} - coming soon</p>
+      </Box>
+    </Paper>
+  );
+}
 
 export default function ProjectDetails() {
   const { projectId } = useParams();
@@ -254,60 +305,100 @@ export default function ProjectDetails() {
   const { tasks } = useTask();
 
   const [activeTab, setActiveTab] = useState("tasks");
-  const [newTaskOpen, setNewTaskOpen] = useState(false);
+  const [createTaskOpened, setCreateTaskOpened] = useState(false);
+  const [manageMembersOpened, setManageMembersOpened] = useState(false);
 
   const project = useMemo(
-    () => (projects || []).find((p) => String(p.id) === String(projectId)),
-    [projects, projectId]
+    () => (projects || []).find((item) => String(item.id) === String(projectId)),
+    [projectId, projects]
   );
 
   const completedCount = useMemo(
-    () => (tasks || []).filter((t) => t.status === "COMPLETED").length,
-    [tasks]
-  );
-  const inProgressCount = useMemo(
-    () => (tasks || []).filter((t) => t.status === "IN_PROGRESS").length,
+    () => (tasks || []).filter((task) => task.status === "COMPLETED").length,
     [tasks]
   );
 
-  // Placeholder team-member count (will be wired up later)
+  const inProgressCount = useMemo(
+    () => (tasks || []).filter((task) => task.status === "IN_PROGRESS").length,
+    [tasks]
+  );
+
   const teamMemberCount = project?.memberCount ?? 1;
+
+  const projectMembersPreview = useMemo(() => {
+    const seen = new Set();
+    const members = [];
+
+    (tasks || []).forEach((task) => {
+      const email = task.assignedToEmail;
+      if (!email || seen.has(email)) return;
+      seen.add(email);
+      members.push({
+        email,
+        name: task.assignedToName,
+        role: "MEMBER",
+      });
+    });
+
+    if (project?.teamLeadEmail && !seen.has(project.teamLeadEmail)) {
+      members.push({
+        email: project.teamLeadEmail,
+        role: "LEAD",
+      });
+    }
+
+    return members;
+  }, [project?.teamLeadEmail, tasks]);
 
   const stats = [
     {
       title: "Total Tasks",
       value: tasks?.length ?? 0,
-      subtitle: "tasks in project",
       icon: <BoltIcon />,
-      color: "blue",
+      valueClassName: "text-slate-900",
     },
     {
       title: "Completed",
       value: completedCount,
-      subtitle: "tasks done",
       icon: <BoltIcon color="#22c55e" />,
-      color: "green",
+      valueClassName: "text-emerald-700",
     },
     {
       title: "In Progress",
       value: inProgressCount,
-      subtitle: "being worked on",
       icon: <BoltIcon color="#f97316" />,
-      color: "orange",
+      valueClassName: "text-orange-700",
     },
     {
       title: "Team Members",
       value: teamMemberCount,
-      subtitle: "on this project",
       icon: <BoltIcon color="#3b82f6" />,
-      color: "blue",
+      valueClassName: "text-blue-600",
     },
   ];
 
+  const handleCreateTaskSubmit = (taskPayload) => {
+    // Endpoint integration placeholder:
+    // dispatch(createTask({ projectId, taskData: taskPayload }))
+    console.log("Create task submit placeholder:", {
+      projectId,
+      taskPayload,
+    });
+    setCreateTaskOpened(false);
+  };
+
+  const handleAddProjectMember = (memberPayload) => {
+    // Endpoint integration placeholder:
+    // dispatch(addProjectMember({ projectId, ...memberPayload }))
+    console.log("Add project member placeholder:", {
+      projectId,
+      memberPayload,
+    });
+  };
+
   return (
-    <Box p={30} className="flex-1 bg-slate-50 overflow-auto min-h-screen">
-      {/* ── Page header ── */}
-      <Group justify="space-between" align="center" mb="xl">
+    <Box p={30} className="flex-1 bg-slate-50 overflow-auto">
+      <Group justify="space-between" align="center" mb={32}>
         <Group gap="sm" align="center">
           <Button
             variant="subtle"
@@ -318,96 +409,104 @@ export default function ProjectDetails() {
           >
             <ArrowLeftIcon />
           </Button>
-          <Text size="xl" fw={700} className="text-gray-900">
-            {project?.name ?? "Project"}
-          </Text>
-          {project?.projectStatus && (
-            <Badge
-              variant="outline"
-              color={PROJECT_STATUS_COLOR[project.projectStatus] || "gray"}
-              size="md"
-              radius="sm"
-            >
-              {project.projectStatus}
-            </Badge>
-          )}
+          <Box>
+            <Group gap="sm" align="center">
+              <Text size="2rem" fw={700} className="text-slate-950">
+                {project?.name ?? "Project"}
+              </Text>
+              {project?.projectStatus && (
+                <Badge
+                  radius="sm"
+                  className={PROJECT_STATUS_CLASS[project.projectStatus] || "bg-slate-400 text-white"}
+                >
+                  {formatEnumLabel(project.projectStatus)}
+                </Badge>
+              )}
+            </Group>
+          </Box>
         </Group>
 
-        <Button
-          leftSection={<PlusIcon />}
-          size="md"
-          radius="md"
-          className="bg-blue-600 hover:bg-blue-700"
-          onClick={() => setNewTaskOpen(true)}
-        >
-          New Task
-        </Button>
+        <Group gap="sm">
+          <Button
+            variant="default"
+            radius="md"
+            onClick={() => setManageMembersOpened(true)}
+          >
+            Manage Members
+          </Button>
+
+          <Button
+            leftSection={<PlusIcon />}
+            radius="md"
+            className="bg-blue-600 hover:bg-blue-700"
+            onClick={() => setCreateTaskOpened(true)}
+          >
+            New Task
+          </Button>
+        </Group>
       </Group>
 
-      {/* ── Stats row ── */}
-      <Box mb="xl" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, i) => (
-          <StatsCard key={i} {...stat} />
+      <Box
+        mb={32}
+        className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4"
+      >
+        {stats.map((stat, index) => (
+          <ProjectStatCard key={index} {...stat} />
         ))}
       </Box>
 
-      {/* ── Tab bar ── */}
-      <Box mb="lg">
-        <Group gap={0} className="border-b border-gray-200">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px
-                ${activeTab === tab.id
-                  ? "border-blue-600 text-blue-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                }`}
-            >
-              {tab.icon}
-              {tab.label}
-            </button>
-          ))}
-        </Group>
+      <Box
+        mb={24}
+        p={4}
+        className="inline-flex flex-wrap"
+        style={{ border: "1px solid #e2e8f0", borderRadius: 8, background: "#ffffff" }}
+      >
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveTab(tab.id)}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              whiteSpace: "nowrap",
+              borderRadius: 6,
+              padding: "10px 20px",
+              fontSize: 14,
+              fontWeight: 500,
+              color: activeTab === tab.id ? "#0f172a" : "#334155",
+              background: activeTab === tab.id ? "#f1f5f9" : "transparent",
+              transition: "background-color 0.2s ease, color 0.2s ease",
+              cursor: "pointer",
+              border: "none",
+            }}
+          >
+            {tab.icon}
+            {tab.label}
+          </button>
+        ))}
       </Box>
 
-      {/* ── Tab content ── */}
-      {activeTab === "tasks" && (
-        <TasksView tasks={tasks} onNewTask={() => setNewTaskOpen(true)} />
-      )}
+      {activeTab === "tasks" && <TasksView tasks={tasks} />}
+      {activeTab === "calendar" && <ComingSoonPanel icon={<CalendarTabIcon />} title="Calendar" />}
+      {activeTab === "analytics" && <ComingSoonPanel icon={<AnalyticsTabIcon />} title="Analytics" />}
+      {activeTab === "settings" && <ComingSoonPanel icon={<SettingsTabIcon />} title="Settings" />}
 
-      {activeTab === "calendar" && (
-        <Paper p="xl" radius="lg" className="border border-gray-100">
-          <Box className="flex flex-col items-center justify-center py-16">
-            <Box className="p-6 bg-slate-100 rounded-2xl mb-4">
-              <CalendarTabIcon />
-            </Box>
-            <Text c="dimmed" size="lg">Calendar — coming soon</Text>
-          </Box>
-        </Paper>
-      )}
+      <CreateTask
+        opened={createTaskOpened}
+        onClose={() => setCreateTaskOpened(false)}
+        onSubmit={handleCreateTaskSubmit}
+        projectName={project?.name}
+      />
 
-      {activeTab === "analytics" && (
-        <Paper p="xl" radius="lg" className="border border-gray-100">
-          <Box className="flex flex-col items-center justify-center py-16">
-            <Box className="p-6 bg-slate-100 rounded-2xl mb-4">
-              <AnalyticsTabIcon />
-            </Box>
-            <Text c="dimmed" size="lg">Analytics — coming soon</Text>
-          </Box>
-        </Paper>
-      )}
-
-      {activeTab === "settings" && (
-        <Paper p="xl" radius="lg" className="border border-gray-100">
-          <Box className="flex flex-col items-center justify-center py-16">
-            <Box className="p-6 bg-slate-100 rounded-2xl mb-4">
-              <SettingsTabIcon />
-            </Box>
-            <Text c="dimmed" size="lg">Settings — coming soon</Text>
-          </Box>
-        </Paper>
-      )}
+      <ManageProjectMembers
+        opened={manageMembersOpened}
+        onClose={() => setManageMembersOpened(false)}
+        onAddMember={handleAddProjectMember}
+        projectName={project?.name}
+        members={projectMembersPreview}
+      />
     </Box>
   );
 }
