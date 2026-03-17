@@ -1,11 +1,14 @@
 package com.projectmanagement.project_management_system.Service;
 
+import com.projectmanagement.project_management_system.DTO.AddProjectMemberRequestDTO;
 import com.projectmanagement.project_management_system.DTO.CreateProjDTO;
+import com.projectmanagement.project_management_system.DTO.ProjectMemberResponseDTO;
 import com.projectmanagement.project_management_system.DTO.ProjResponse;
 import com.projectmanagement.project_management_system.Entity.Organization;
 import com.projectmanagement.project_management_system.Entity.Project;
 import com.projectmanagement.project_management_system.Entity.ProjectMember;
 import com.projectmanagement.project_management_system.Entity.User;
+import com.projectmanagement.project_management_system.Enums.MemberStatus;
 import com.projectmanagement.project_management_system.Enums.OrganizationRole;
 import com.projectmanagement.project_management_system.Enums.ProjectRole;
 import com.projectmanagement.project_management_system.Exception.InvalidRequestException;
@@ -121,5 +124,68 @@ public class ProjectService {
                 project.getStartDate(),
                 project.getEndDate()
         )).toList();
+    }
+
+    @Transactional
+    public ProjectMemberResponseDTO addMemberToProject(Long projectId, AddProjectMemberRequestDTO requestDTO, String requestedByEmail) {
+        User requestedBy = userRepository.findByEmail(requestedByEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", requestedByEmail));
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Project", "id", projectId));
+
+        boolean isOrgAdmin = organizationMemberRepository
+                .findByUserIdAndOrganizationIdAndOrganizationRole(
+                        requestedBy.getId(),
+                        project.getOrganization().getId(),
+                        OrganizationRole.ADMIN
+                )
+                .isPresent();
+
+        boolean isProjectLead = projectMemberRepository
+                .existsByUserIdAndProjectIdAndProjectRole(requestedBy.getId(), projectId, ProjectRole.LEAD);
+
+        if (!isOrgAdmin && !isProjectLead) {
+            throw new UnauthorizedException("Only organization admins or project leads can add members to a project");
+        }
+
+        User userToAdd = userRepository.findByEmail(requestDTO.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", requestDTO.getEmail()));
+
+        organizationMemberRepository
+                .findByUserIdAndOrganizationIdAndMemberStatus(
+                        userToAdd.getId(),
+                        project.getOrganization().getId(),
+                        MemberStatus.ACTIVE
+                )
+                .orElseThrow(() -> new InvalidRequestException("User must be an active member of the organization"));
+
+        if (projectMemberRepository.existsByUserIdAndProjectId(userToAdd.getId(), projectId)) {
+            throw new InvalidRequestException("User is already a member of this project");
+        }
+
+        ProjectRole roleToAssign = requestDTO.getProjectRole() != null ? requestDTO.getProjectRole() : ProjectRole.MEMBER;
+
+        // Prevent privilege escalation by restricting LEAD assignment to org admins.
+        if (roleToAssign == ProjectRole.LEAD && !isOrgAdmin) {
+            throw new UnauthorizedException("Only organization admins can assign LEAD role");
+        }
+
+        ProjectMember projectMember = new ProjectMember();
+        projectMember.setProject(project);
+        projectMember.setUser(userToAdd);
+        projectMember.setProjectRole(roleToAssign);
+
+        ProjectMember savedMember = projectMemberRepository.save(projectMember);
+
+        String memberName = userToAdd.getFirstName() + " " + userToAdd.getLastName();
+        return new ProjectMemberResponseDTO(
+                project.getId(),
+                project.getName(),
+                savedMember.getUser().getId(),
+                savedMember.getUser().getEmail(),
+                memberName.trim(),
+                savedMember.getProjectRole()
+        );
     }
 }
