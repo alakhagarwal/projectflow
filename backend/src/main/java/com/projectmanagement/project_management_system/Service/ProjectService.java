@@ -16,6 +16,7 @@ import com.projectmanagement.project_management_system.Exception.ResourceNotFoun
 import com.projectmanagement.project_management_system.Exception.UnauthorizedException;
 import com.projectmanagement.project_management_system.Repository.*;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -187,5 +188,35 @@ public class ProjectService {
                 memberName.trim(),
                 savedMember.getProjectRole()
         );
+    }
+
+    public List<ProjectMemberResponseDTO> getProjectMembers(Long projectId, UserDetails requstedByUser) {
+        User requestedBy = userRepository.findByEmail(requstedByUser.getUsername())
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", requstedByUser.getUsername()));
+
+        // 1. Verify project exists
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Project", "id", projectId));
+
+        boolean isProjectMember = projectMemberRepository
+                .existsByUserIdAndProjectId(requestedBy.getId(), projectId);
+
+        if (!isProjectMember) {
+            throw new UnauthorizedException("You are not a member of this project");
+        }
+
+        List<ProjectMember> members = projectMemberRepository.findByProjectId(projectId);
+        return members.stream().map(member -> {
+            User user = member.getUser();
+            String memberName = user.getFirstName() + " " + user.getLastName();
+            return new ProjectMemberResponseDTO(
+                    project.getId(),
+                    project.getName(),
+                    user.getId(),
+                    user.getEmail(),
+                    memberName.trim(),
+                    member.getProjectRole()
+            );
+        }).toList();
     }
 }

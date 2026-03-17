@@ -42,4 +42,12 @@ public class ProjectController {
         ProjectMemberResponseDTO response = projectService.addMemberToProject(projectId, requestDTO, userDetails.getUsername());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
+
+    @GetMapping("/{projectId}/members")
+    public ResponseEntity<?> getProjectMembers(
+            @PathVariable Long projectId,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.status(HttpStatus.OK).body(projectService.getProjectMembers(projectId, userDetails));
+    }
+
 }
