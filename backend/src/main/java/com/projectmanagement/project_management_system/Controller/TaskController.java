@@ -27,9 +27,15 @@ public class TaskController {
         return ResponseEntity.status(HttpStatus.CREATED).body(taskResponseDTO);
     }
 
-    @GetMapping("/fetch/{orgID}")
-    public ResponseEntity<?> getTasksByOrganization(@PathVariable Long orgID, @AuthenticationPrincipal UserDetails userDetails) {
-        List<TaskResponseDTO> taskResponseDTOS = taskService.getTasksByOrganization(orgID, userDetails.getUsername());
+//    @GetMapping("/fetch/{orgID}")
+//    public ResponseEntity<?> getTasksByOrganization(@PathVariable Long orgID, @AuthenticationPrincipal UserDetails userDetails) {
+//        List<TaskResponseDTO> taskResponseDTOS = taskService.getTasksByOrganization(orgID, userDetails.getUsername());
+//        return ResponseEntity.ok(taskResponseDTOS);
+//    }
+
+    @GetMapping("/fetch/{projID}")
+    public ResponseEntity<?> getTasksByProject(@PathVariable Long projID, @AuthenticationPrincipal UserDetails userDetails) {
+        List<TaskResponseDTO> taskResponseDTOS = taskService.getTasksByProject(projID, userDetails.getUsername());
         return ResponseEntity.ok(taskResponseDTOS);
     }
 

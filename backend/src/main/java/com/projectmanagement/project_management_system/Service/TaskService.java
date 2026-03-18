@@ -5,9 +5,12 @@ import com.projectmanagement.project_management_system.DTO.TaskResponseDTO;
 import com.projectmanagement.project_management_system.Entity.Project;
 import com.projectmanagement.project_management_system.Entity.Task;
 import com.projectmanagement.project_management_system.Entity.User;
+import com.projectmanagement.project_management_system.Enums.MemberStatus;
+import com.projectmanagement.project_management_system.Enums.OrganizationRole;
 import com.projectmanagement.project_management_system.Exception.InvalidRequestException;
 import com.projectmanagement.project_management_system.Exception.ResourceNotFoundException;
 import com.projectmanagement.project_management_system.Exception.UnauthorizedException;
+import com.projectmanagement.project_management_system.Repository.OrganizationMemberRepository;
 import com.projectmanagement.project_management_system.Repository.ProjectMemberRepository;
 import com.projectmanagement.project_management_system.Repository.ProjectRepository;
 import com.projectmanagement.project_management_system.Repository.TaskRepository;
@@ -26,6 +29,7 @@ public class TaskService {
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
+    private final OrganizationMemberRepository organizationMemberRepository;
 
     @Transactional
     public TaskResponseDTO createTask(TaskCreateDTO taskCreateDTO, String createdByEmail, Long projectId) {
@@ -76,31 +80,31 @@ public class TaskService {
         return responseDTO;
     }
 
+    public List<TaskResponseDTO> getTasksByProject(Long projID, String username) {
 
-    public List<TaskResponseDTO> getTasksByOrganization(Long orgID, String username) {
-        // Get the user
+        Project project = projectRepository.findById(projID)
+                .orElseThrow(() -> new ResourceNotFoundException("Project not found"));
+
         User user = userRepository.findByEmail(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
-        // Get all projects in the organization
-        List<Project> projectsInOrg = projectRepository.findByOrganizationId(orgID);
+        boolean isProjectMember = projectMemberRepository.existsByUserIdAndProjectId(user.getId(), projID);
 
-        // Filter to only projects where the user is a member
-        List<Project> userProjects = projectsInOrg.stream()
-                .filter(project -> projectMemberRepository.existsByUserIdAndProjectId(user.getId(), project.getId()))
-                .toList();
+        boolean isActiveOrgAdmin = organizationMemberRepository
+                .findByUserIdAndOrganizationIdAndMemberStatus(
+                        user.getId(),
+                        project.getOrganization().getId(),
+                        MemberStatus.ACTIVE
+                )
+                .map(orgMember -> orgMember.getOrganizationRole() == OrganizationRole.ADMIN)
+                .orElse(false);
 
-        // If user is not a member of any project in this org, return empty list
-        if (userProjects.isEmpty()) {
-            return List.of();
+        if (!isProjectMember && !isActiveOrgAdmin) {
+            throw new UnauthorizedException("You are not a member of this project");
         }
 
-        // Get all tasks from the projects the user is a member of
-        List<Task> tasks = userProjects.stream()
-                .flatMap(project -> taskRepository.findByProjectId(project.getId()).stream())
-                .toList();
+        List<Task> tasks = taskRepository.findByProjectId(projID);
 
-        // Map tasks to DTOs
         return tasks.stream().map(task -> {
             TaskResponseDTO responseDTO = new TaskResponseDTO();
             responseDTO.setId(task.getId());
@@ -122,6 +126,54 @@ public class TaskService {
             return responseDTO;
         }).toList();
 
-
     }
+
+
+//    public List<TaskResponseDTO> getTasksByOrganization(Long orgID, String username) {
+//        // Get the user
+//        User user = userRepository.findByEmail(username)
+//                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+//
+//        // Get all projects in the organization
+//        List<Project> projectsInOrg = projectRepository.findByOrganizationId(orgID);
+//
+//        // Filter to only projects where the user is a member
+//        List<Project> userProjects = projectsInOrg.stream()
+//                .filter(project -> projectMemberRepository.existsByUserIdAndProjectId(user.getId(), project.getId()))
+//                .toList();
+//
+//        // If user is not a member of any project in this org, return empty list
+//        if (userProjects.isEmpty()) {
+//            return List.of();
+//        }
+//
+//        // Get all tasks from the projects the user is a member of
+//        List<Task> tasks = userProjects.stream()
+//                .flatMap(project -> taskRepository.findByProjectId(project.getId()).stream())
+//                .toList();
+//
+//        // Map tasks to DTOs
+//        return tasks.stream().map(task -> {
+//            TaskResponseDTO responseDTO = new TaskResponseDTO();
+//            responseDTO.setId(task.getId());
+//            responseDTO.setTitle(task.getTitle());
+//            responseDTO.setDescription(task.getDescription());
+//            responseDTO.setProjectId(task.getProject().getId());
+//            responseDTO.setAssignedToEmail(task.getAssignedTo().getEmail());
+//            responseDTO.setCreatedByEmail(task.getCreatedBy().getEmail());
+//            responseDTO.setDueDate(task.getDueDate());
+//            responseDTO.setTaskType(task.getTaskType());
+//            responseDTO.setTaskPriority(task.getTaskPriority());
+//            responseDTO.setTaskStatus(task.getTaskStatus());
+//
+//            responseDTO.setProjectName(task.getProject().getName());
+//            responseDTO.setAssignedToName(task.getAssignedTo().getFirstName() + " " + task.getAssignedTo().getLastName());
+//            responseDTO.setCreatedByName(task.getCreatedBy().getFirstName() + " " + task.getCreatedBy().getLastName());
+//            responseDTO.setCreatedAt(task.getCreatedAt());
+//
+//            return responseDTO;
+//        }).toList();
+//
+//
+//    }
 }
