@@ -1,9 +1,9 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Box, Paper, Group, Text, Badge, Button, Select, Table } from "@mantine/core";
-import { notifications } from "@mantine/notifications";
 import { useProj } from "../redux/hooks/useProj";
 import { useTask } from "../redux/hooks/useTask";
+import { useProjMember } from "../redux/hooks/useprojMember";
 import CreateTask from "./CreateTask";
 import ManageProjectMembers from "./ManageProjectMembers";
 
@@ -304,10 +304,14 @@ export default function ProjectDetails() {
   const navigate = useNavigate();
   const { projects } = useProj();
   const { tasks } = useTask();
+  const { loadProjectMembers, clearProjectMembers } = useProjMember();
+  // will be using them to decide weather to show manage members button and project members list in project details page. will be used in future iterations when we implement project roles and permissions
 
   const [activeTab, setActiveTab] = useState("tasks");
   const [createTaskOpened, setCreateTaskOpened] = useState(false);
   const [manageMembersOpened, setManageMembersOpened] = useState(false);
+  const [canUseProjectActions, setCanUseProjectActions] = useState(false);
+  const [checkingProjectAccess, setCheckingProjectAccess] = useState(true);
 
   const project = useMemo(
     () => (projects || []).find((item) => String(item.id) === String(projectId)),
@@ -363,6 +367,50 @@ export default function ProjectDetails() {
     setCreateTaskOpened(false);
   };
 
+// Endpoint used: GET /proj/{projectId}/members
+// Backend already enforces project-members-only for this endpoint.
+// So:
+// Success => user is project member => allow actions.
+// Failure => user not allowed (or other error) => hide actions.
+
+  useEffect(() => {
+    let active = true;
+
+    const checkProjectAccess = async () => {
+      if (!projectId) {
+        if (active) {
+          setCanUseProjectActions(false);
+          setCheckingProjectAccess(false);
+        }
+        return;
+      }
+
+      setCheckingProjectAccess(true);
+
+      try {
+        await loadProjectMembers(projectId).unwrap();
+        if (active) {
+          setCanUseProjectActions(true);
+        }
+      } catch {
+        if (active) {
+          setCanUseProjectActions(false);
+        }
+      } finally {
+        if (active) {
+          setCheckingProjectAccess(false);
+        }
+      }
+    };
+
+    checkProjectAccess();
+
+    return () => {
+      active = false;
+      clearProjectMembers();
+    };
+  }, [clearProjectMembers, loadProjectMembers, projectId]);
+
   return (
     <Box p={30} className="flex-1 bg-slate-50 overflow-auto">
       <Group justify="space-between" align="center" mb={32}>
@@ -394,22 +442,26 @@ export default function ProjectDetails() {
         </Group>
 
         <Group gap="sm">
-          <Button
-            variant="default"
-            radius="md"
-            onClick={() => setManageMembersOpened(true)}
-          >
-            Manage Members
-          </Button>
+          {!checkingProjectAccess && canUseProjectActions && (
+            <Button
+              variant="default"
+              radius="md"
+              onClick={() => setManageMembersOpened(true)}
+            >
+              Manage Members
+            </Button>
+          )}
 
-          <Button
-            leftSection={<PlusIcon />}
-            radius="md"
-            className="bg-blue-600 hover:bg-blue-700"
-            onClick={() => setCreateTaskOpened(true)}
-          >
-            New Task
-          </Button>
+          {!checkingProjectAccess && canUseProjectActions && (
+            <Button
+              leftSection={<PlusIcon />}
+              radius="md"
+              className="bg-blue-600 hover:bg-blue-700"
+              onClick={() => setCreateTaskOpened(true)}
+            >
+              New Task
+            </Button>
+          )}
         </Group>
       </Group>
 
