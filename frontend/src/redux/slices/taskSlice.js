@@ -1,6 +1,14 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import api from "../../config/api";
 
+const initialState = {
+  tasks: [],
+  loading: false,
+  error: null,
+  addError: null,
+  addedTask: null,
+};
+
 export const createTask = createAsyncThunk(
   "task/createTask",
   async ({ projectId, taskData }, { rejectWithValue }) => {
@@ -10,14 +18,20 @@ export const createTask = createAsyncThunk(
     } catch (error) {
       return rejectWithValue(error.response?.data || error.message);
     }
-  }
+  },
 );
 
-const initialState = {
-  tasks: [],
-  loading: false,
-  error: null,
-};
+export const fetchTasks = createAsyncThunk(
+  "task/fetchTasks",
+  async (projectId, { rejectWithValue }) => {
+    try {
+      const response = await api.get(`/task/fetch/${projectId}`);
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || error.message);
+    }
+  },
+);
 
 const taskSlice = createSlice({
   name: "task",
@@ -25,14 +39,25 @@ const taskSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(createTask.pending, (state) => {
+        state.addError = null;
+        state.addedTask = null;
+      })
+      .addCase(createTask.fulfilled, (state, action) => {
+        state.tasks.push(action.payload);
+        state.addedTask = action.payload;
+      })
+      .addCase(createTask.rejected, (state, action) => {
+        state.addError = action.payload || "Failed to create task";
+      })
+      .addCase(fetchTasks.pending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addCase(createTask.fulfilled, (state, action) => {
+      .addCase(fetchTasks.fulfilled, (state, action) => {
         state.loading = false;
-        state.tasks.push(action.payload);
+        state.tasks = action.payload;
       })
-      .addCase(createTask.rejected, (state, action) => {
+      .addCase(fetchTasks.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
       });

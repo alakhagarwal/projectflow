@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
-import { createTask } from "../slices/taskSlice";
+import { createTask, fetchTasks } from "../slices/taskSlice";
 import { useCallback } from "react";
 
 export const useTask = () => {
@@ -13,8 +13,16 @@ export const useTask = () => {
     [dispatch],
   );
 
+  const loadTasks = useCallback(
+    (projectId) => {
+      return dispatch(fetchTasks(projectId));
+    },
+    [dispatch],
+  );
+
   return {
     createTask: createTaskAsync,
+    loadTasks,
     tasks,
     loading,
     error,
