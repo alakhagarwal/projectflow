@@ -65,11 +65,15 @@ const projMemberSlice = createSlice({
       })
       .addCase(addProjectMember.fulfilled, (state, action) => {
         state.loading = false;
+        state.addError = null;
         state.addedMember = action.payload;
 
         const addedUserId = action.payload?.userId;
+        const addedUserEmail = action.payload?.userEmail;
         const alreadyExists = state.members.some(
-          (member) => member.userId === addedUserId,
+          (member) =>
+            member.userId === addedUserId ||
+            (addedUserEmail && member.userEmail === addedUserEmail),
         );
 
         if (!alreadyExists) {
@@ -81,6 +85,8 @@ const projMemberSlice = createSlice({
         state.addError = action.payload || "Failed to add project member";
       })
       .addCase(fetchProjectMembers.fulfilled, (state, action) => {
+        state.loading = false;
+        state.error = null;
         state.members = action.payload;
       })
       .addCase(fetchProjectMembers.rejected, (state, action) => {

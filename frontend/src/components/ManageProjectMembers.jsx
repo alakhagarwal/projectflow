@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Modal,
   Text,
@@ -10,7 +10,10 @@ import {
   Paper,
   Table,
   Badge,
+  Alert,
 } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
+import { useProjMember } from "../redux/hooks/useprojMember";
 
 const ROLE_OPTIONS = [
   { value: "MEMBER", label: "Member" },
@@ -18,62 +21,123 @@ const ROLE_OPTIONS = [
 ];
 
 const getDisplayName = (member) => {
+  if (member?.memberName) return member.memberName;
   if (member?.name) return member.name;
-  if (member?.email) return member.email.split("@")[0];
+  const email = member?.userEmail || member?.email;
+  if (email) return email.split("@")[0];
   return "Unknown";
+};
+
+const getMemberEmail = (member) => member?.userEmail || member?.email || "";
+
+const getMemberRole = (member) => member?.projectRole || member?.role || "MEMBER";
+
+const mapAddMemberErrorMessage = (error) => {
+  const rawMessage = typeof error === "string" ? error : error?.message || "";
+  const normalized = rawMessage.toLowerCase();
+
+  if (normalized.includes("already a member of this project")) {
+    return "This user is already a member of the project.";
+  }
+
+  if (normalized.includes("active member of the organization")) {
+    return "This user is not an active member of the organization.";
+  }
+
+  return rawMessage || "Failed to add project member";
 };
 
 export default function ManageProjectMembers({
   opened,
   onClose,
+  projectId,
   projectName,
-  members = [],
-  onAddMember,
 }) {
+  const {
+    members,
+    loading,
+    error: fetchError,
+    addMemberToProject,
+    loadProjectMembers,
+    clearProjectMembers,
+  } = useProjMember();
+
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("MEMBER");
-  const [localMembers, setLocalMembers] = useState([]);
+  const [formError, setFormError] = useState(null);
+  const [fetchErrorDismissed, setFetchErrorDismissed] = useState(false);
 
-  const mergedMembers = useMemo(() => {
+  const normalizedMembers = useMemo(() => {
     const seen = new Set();
     const list = [];
 
-    [...members, ...localMembers].forEach((member) => {
-      if (!member?.email || seen.has(member.email)) return;
-      seen.add(member.email);
+    members.forEach((member) => {
+      const memberEmail = getMemberEmail(member).toLowerCase();
+      if (!memberEmail || seen.has(memberEmail)) return;
+      seen.add(memberEmail);
       list.push(member);
     });
 
     return list;
-  }, [localMembers, members]);
+  }, [members]);
 
-  const handleAdd = (event) => {
+  const handleAdd = useCallback(async (event) => {
     event.preventDefault();
+    setFormError(null);
 
     const trimmedEmail = email.trim().toLowerCase();
-    if (!trimmedEmail) return;
+    if (!trimmedEmail || loading) return;
 
     const simpleEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!simpleEmailRegex.test(trimmedEmail)) return;
+    if (!simpleEmailRegex.test(trimmedEmail)) {
+      const invalidEmailError = "Please enter a valid email address.";
+      setFormError(invalidEmailError);
+      return;
+    }
 
-    const alreadyExists = mergedMembers.some((member) => member.email === trimmedEmail);
-    if (alreadyExists) return;
+    const alreadyExists = normalizedMembers.some(
+      (member) => getMemberEmail(member).toLowerCase() === trimmedEmail,
+    );
+    if (alreadyExists) {
+      const duplicateError = "This user is already a member of the project.";
+      setFormError(duplicateError);
+      return;
+    }
 
-    const newMember = {
-      email: trimmedEmail,
-      role: role || "MEMBER",
-      name: trimmedEmail.split("@")[0],
-    };
-
-    setLocalMembers((prev) => [...prev, newMember]);
-
-    if (onAddMember) {
-      onAddMember({ email: trimmedEmail, role: role || "MEMBER" });
+    try {
+      await addMemberToProject(projectId, trimmedEmail, role || "MEMBER").unwrap();
+      notifications.show({
+        title: "Success",
+        message: "Project member added successfully",
+        color: "green",
+      });
+    } catch (error) {
+      const errorMessage = mapAddMemberErrorMessage(error);
+      setFormError(errorMessage);
+      return;
     }
 
     setEmail("");
     setRole("MEMBER");
-  };
+  }, [addMemberToProject, email, loading, normalizedMembers, projectId, role]);
+
+  useEffect(() => {
+    if (!opened || !projectId) return;
+
+    loadProjectMembers(projectId);
+  }, [loadProjectMembers, opened, projectId]);
+
+  useEffect(() => {
+    if (fetchError) {
+      setFetchErrorDismissed(false);
+    }
+  }, [fetchError]);
+
+  useEffect(() => {
+    return () => {
+      clearProjectMembers();
+    };
+  }, [clearProjectMembers]);
 
   return (
     <Modal
@@ -86,6 +150,17 @@ export default function ManageProjectMembers({
       overlayProps={{ backgroundOpacity: 0.3, blur: 2 }}
     >
       <Stack gap="lg">
+        {formError && (
+          <Alert color="red" withCloseButton onClose={() => setFormError(null)}>
+            {formError}
+          </Alert>
+        )}
+        {fetchError && !fetchErrorDismissed && (
+          <Alert color="red" withCloseButton onClose={() => setFetchErrorDismissed(true)}>
+            {fetchError}
+          </Alert>
+        )}
+
         <Paper withBorder radius="md" p="md">
           <Text fw={600} mb={6}>Add member to {projectName || "this project"}</Text>
           <Text c="dimmed" size="sm" mb="md">
@@ -100,6 +175,7 @@ export default function ManageProjectMembers({
                 value={email}
                 onChange={(e) => setEmail(e.currentTarget.value)}
                 required
+                disabled={loading}
               />
               <Select
                 label="Role"
@@ -107,9 +183,10 @@ export default function ManageProjectMembers({
                 value={role}
                 onChange={setRole}
                 allowDeselect={false}
+                disabled={loading}
               />
-              <Button type="submit" radius="md">
-                Add Member
+              <Button type="submit" radius="md" disabled={loading}>
+                {loading ? "Adding..." : "Add Member"}
               </Button>
             </Group>
           </form>
@@ -125,7 +202,7 @@ export default function ManageProjectMembers({
               </Table.Tr>
             </Table.Thead>
             <Table.Tbody>
-              {mergedMembers.length === 0 ? (
+              {normalizedMembers.length === 0 ? (
                 <Table.Tr>
                   <Table.Td colSpan={3}>
                     <Text c="dimmed" ta="center" py="md">
@@ -134,17 +211,21 @@ export default function ManageProjectMembers({
                   </Table.Td>
                 </Table.Tr>
               ) : (
-                mergedMembers.map((member) => (
-                  <Table.Tr key={member.email}>
+                normalizedMembers.map((member) => {
+                  const memberEmail = getMemberEmail(member);
+                  const memberRole = getMemberRole(member);
+                  return (
+                  <Table.Tr key={member.userId || memberEmail}>
                     <Table.Td>{getDisplayName(member)}</Table.Td>
-                    <Table.Td>{member.email}</Table.Td>
+                    <Table.Td>{memberEmail}</Table.Td>
                     <Table.Td>
-                      <Badge radius="sm" variant="light" color={member.role === "LEAD" ? "blue" : "gray"}>
-                        {member.role || "MEMBER"}
+                      <Badge radius="sm" variant="light" color={memberRole === "LEAD" ? "blue" : "gray"}>
+                        {memberRole}
                       </Badge>
                     </Table.Td>
                   </Table.Tr>
-                ))
+                  );
+                })
               )}
             </Table.Tbody>
           </Table>

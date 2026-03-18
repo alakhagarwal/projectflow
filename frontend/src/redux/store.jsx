@@ -4,6 +4,7 @@ import orgReducer from './slices/orgSlice';
 import projReducer from './slices/projSlice';
 import memberReducer from './slices/memberSlice';
 import taskReducer from './slices/taskSlice';
+import projectMemberReducer from './slices/projMemberSlice';
 
 export const store = configureStore({
   reducer: {
@@ -12,5 +13,6 @@ export const store = configureStore({
     proj : projReducer,
     team : memberReducer,
     task : taskReducer,
+    projectMember: projectMemberReducer,
   },
 });

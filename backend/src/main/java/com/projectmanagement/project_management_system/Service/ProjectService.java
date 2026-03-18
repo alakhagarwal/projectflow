@@ -187,13 +187,13 @@ public class ProjectService {
         User userToAdd = userRepository.findByEmail(requestDTO.getEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("User", "email", requestDTO.getEmail()));
 
-        organizationMemberRepository
-                .findByUserIdAndOrganizationIdAndMemberStatus(
-                        userToAdd.getId(),
-                        project.getOrganization().getId(),
-                        MemberStatus.ACTIVE
-                )
-                .orElseThrow(() -> new InvalidRequestException("User must be an active member of the organization"));
+        OrganizationMember orgMembership = organizationMemberRepository
+                .findByUserIdAndOrganizationId(userToAdd.getId(), project.getOrganization().getId())
+                .orElseThrow(() -> new InvalidRequestException("User is not a member of this organization"));
+
+        if (orgMembership.getMemberStatus() != MemberStatus.ACTIVE) {
+            throw new InvalidRequestException("User must be an active member of the organization");
+        }
 
         if (projectMemberRepository.existsByUserIdAndProjectId(userToAdd.getId(), projectId)) {
             throw new InvalidRequestException("User is already a member of this project");

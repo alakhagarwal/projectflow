@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Box, Paper, Group, Text, Badge, Button, Select, Table } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
 import { useProj } from "../redux/hooks/useProj";
 import { useTask } from "../redux/hooks/useTask";
 import CreateTask from "./CreateTask";
@@ -323,32 +324,7 @@ export default function ProjectDetails() {
     [tasks]
   );
 
-  const teamMemberCount = project?.memberCount ?? 1;
-
-  const projectMembersPreview = useMemo(() => {
-    const seen = new Set();
-    const members = [];
-
-    (tasks || []).forEach((task) => {
-      const email = task.assignedToEmail;
-      if (!email || seen.has(email)) return;
-      seen.add(email);
-      members.push({
-        email,
-        name: task.assignedToName,
-        role: "MEMBER",
-      });
-    });
-
-    if (project?.teamLeadEmail && !seen.has(project.teamLeadEmail)) {
-      members.push({
-        email: project.teamLeadEmail,
-        role: "LEAD",
-      });
-    }
-
-    return members;
-  }, [project?.teamLeadEmail, tasks]);
+  const teamMemberCount = project?.memberCount || 1;
 
   const stats = [
     {
@@ -385,15 +361,6 @@ export default function ProjectDetails() {
       taskPayload,
     });
     setCreateTaskOpened(false);
-  };
-
-  const handleAddProjectMember = (memberPayload) => {
-    // Endpoint integration placeholder:
-    // dispatch(addProjectMember({ projectId, ...memberPayload }))
-    console.log("Add project member placeholder:", {
-      projectId,
-      memberPayload,
-    });
   };
 
   return (
@@ -503,9 +470,8 @@ export default function ProjectDetails() {
       <ManageProjectMembers
         opened={manageMembersOpened}
         onClose={() => setManageMembersOpened(false)}
-        onAddMember={handleAddProjectMember}
+        projectId={projectId}
         projectName={project?.name}
-        members={projectMembersPreview}
       />
     </Box>
   );
