@@ -4,10 +4,7 @@ import com.projectmanagement.project_management_system.DTO.AddProjectMemberReque
 import com.projectmanagement.project_management_system.DTO.CreateProjDTO;
 import com.projectmanagement.project_management_system.DTO.ProjectMemberResponseDTO;
 import com.projectmanagement.project_management_system.DTO.ProjResponse;
-import com.projectmanagement.project_management_system.Entity.Organization;
-import com.projectmanagement.project_management_system.Entity.Project;
-import com.projectmanagement.project_management_system.Entity.ProjectMember;
-import com.projectmanagement.project_management_system.Entity.User;
+import com.projectmanagement.project_management_system.Entity.*;
 import com.projectmanagement.project_management_system.Enums.MemberStatus;
 import com.projectmanagement.project_management_system.Enums.OrganizationRole;
 import com.projectmanagement.project_management_system.Enums.ProjectRole;
@@ -21,7 +18,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -94,7 +93,7 @@ public class ProjectService {
         projectMemberRepository.save(projectMember);
 
 
-        ProjResponse projResponse = new ProjResponse(
+        return new ProjResponse(
                 savedProject.getId(),
                 savedProject.getName(),
                 savedProject.getDescription(),
@@ -107,24 +106,59 @@ public class ProjectService {
                 savedProject.getEndDate()
         );
 
-        return projResponse;
-
     }
 
-    public List<ProjResponse> getAllProjects(Long organizationId) {
-        List<Project> projects = projectRepository.findByOrganizationId(organizationId);
-        return projects.stream().map(project -> new ProjResponse(
-                project.getId(),
-                project.getName(),
-                project.getDescription(),
-                project.getOrganization().getId(),
-                project.getCreatedBy().getEmail(),
-                project.getTeamLead().getEmail(),
-                project.getProjectStatus(),
-                project.getProjectPriority(),
-                project.getStartDate(),
-                project.getEndDate()
-        )).toList();
+    public List<ProjResponse> getAllProjects(Long organizationId, String requestedByEmail) {
+        User requestedBy = userRepository.findByEmail(requestedByEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", requestedByEmail));
+
+        OrganizationMember orgMembership = organizationMemberRepository
+                .findByUserIdAndOrganizationIdAndMemberStatus(
+                        requestedBy.getId(),
+                        organizationId,
+                        MemberStatus.ACTIVE
+                )
+                .orElseThrow(() -> new UnauthorizedException("You are not a member of this organization"));
+
+        if(orgMembership.getOrganizationRole() == OrganizationRole.ADMIN) {
+            // If user is an admin, return all projects in the organization
+            List<Project> projects = projectRepository.findByOrganizationId(organizationId);
+            return projects.stream().map(project -> new ProjResponse(
+                    project.getId(),
+                    project.getName(),
+                    project.getDescription(),
+                    project.getOrganization().getId(),
+                    project.getCreatedBy().getEmail(),
+                    project.getTeamLead().getEmail(),
+                    project.getProjectStatus(),
+                    project.getProjectPriority(),
+                    project.getStartDate(),
+                    project.getEndDate()
+            )).toList();
+        }
+
+       List <ProjectMember> projectMemberships = projectMemberRepository.findByUserId(requestedBy.getId());
+
+        // fetch the projects using projID fetched in projectMemberships
+        Set<Long> seenProjectIds = new HashSet<>();
+        return projectMemberships.stream()
+                .filter(pm -> pm.getProject().getOrganization().getId().equals(organizationId))
+                .filter(pm -> seenProjectIds.add(pm.getProject().getId()))
+                .map(pm -> {
+                    Project project = pm.getProject();
+                    return new ProjResponse(
+                            project.getId(),
+                            project.getName(),
+                            project.getDescription(),
+                            project.getOrganization().getId(),
+                            project.getCreatedBy().getEmail(),
+                            project.getTeamLead().getEmail(),
+                            project.getProjectStatus(),
+                            project.getProjectPriority(),
+                            project.getStartDate(),
+                            project.getEndDate()
+                    );
+                }).toList();
     }
 
     @Transactional

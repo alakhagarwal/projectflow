@@ -28,8 +28,9 @@ public class ProjectController {
     }
 
     @GetMapping("/getAll/{organizationId}")
-    public ResponseEntity<?> getAllProjects(@PathVariable Long organizationId) {
-        return ResponseEntity.status(HttpStatus.OK).body(projectService.getAllProjects(organizationId));
+    public ResponseEntity<?> getAllProjects(@PathVariable Long organizationId,
+                                            @AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.status(HttpStatus.OK).body(projectService.getAllProjects(organizationId, userDetails.getUsername()));
 
     }
 

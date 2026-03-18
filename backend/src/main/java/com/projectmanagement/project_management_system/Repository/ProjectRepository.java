@@ -10,4 +10,6 @@ import java.util.List;
 public interface ProjectRepository extends JpaRepository<Project,Long> {
 
     List<Project> findByOrganizationId(Long organizationId);
+
+    // method which return s
 }
