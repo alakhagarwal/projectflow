@@ -1,10 +1,10 @@
 import { useDispatch, useSelector } from "react-redux";
-import { createTask, fetchTasks } from "../slices/taskSlice";
+import { clearTaskState, createTask, fetchTasks } from "../slices/taskSlice";
 import { useCallback } from "react";
 
 export const useTask = () => {
   const dispatch = useDispatch();
-  const { tasks, loading, error } = useSelector((state) => state.task);
+  const { tasks, loading, addLoading, error, addError, addedTask } = useSelector((state) => state.task);
 
   const createTaskAsync = useCallback(
     (projectId, taskData) => {
@@ -20,11 +20,19 @@ export const useTask = () => {
     [dispatch],
   );
 
+  const clearTasks = useCallback(() => {
+    dispatch(clearTaskState());
+  }, [dispatch]);
+
   return {
     createTask: createTaskAsync,
     loadTasks,
+    clearTasks,
     tasks,
     loading,
+    addLoading,
     error,
+    addError,
+    addedTask,
   };
 };

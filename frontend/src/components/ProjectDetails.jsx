@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Box, Paper, Group, Text, Badge, Button, Select, Table } from "@mantine/core";
+import { Box, Paper, Group, Text, Badge, Button, Select, Table, Alert, Loader } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
 import { useProj } from "../redux/hooks/useProj";
 import { useTask } from "../redux/hooks/useTask";
 import { useProjMember } from "../redux/hooks/useprojMember";
@@ -132,7 +133,7 @@ function FilterSelect({ value, onChange, options, placeholder }) {
   );
 }
 
-function TasksView({ tasks }) {
+function TasksView({ tasks, loading, error }) {
   const [statusFilter, setStatusFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("");
@@ -143,7 +144,7 @@ function TasksView({ tasks }) {
       if (statusFilter && task.status !== statusFilter) return false;
       if (typeFilter && task.taskType !== typeFilter) return false;
       if (priorityFilter && task.priority !== priorityFilter) return false;
-      if (assigneeFilter && String(task.assigneeId) !== assigneeFilter) return false;
+      if (assigneeFilter && String(task.assigneeEmail) !== assigneeFilter) return false;
       return true;
     });
   }, [assigneeFilter, priorityFilter, statusFilter, tasks, typeFilter]);
@@ -153,11 +154,11 @@ function TasksView({ tasks }) {
     const options = [];
 
     (tasks || []).forEach((task) => {
-      if (task.assigneeId && !seen.has(task.assigneeId)) {
-        seen.add(task.assigneeId);
+      if (task.assigneeEmail && !seen.has(task.assigneeEmail)) {
+        seen.add(task.assigneeEmail);
         options.push({
-          value: String(task.assigneeId),
-          label: task.assigneeName || `User ${task.assigneeId}`,
+          value: String(task.assigneeEmail),
+          label: task.assigneeName || task.assigneeEmail,
         });
       }
     });
@@ -167,6 +168,19 @@ function TasksView({ tasks }) {
 
   return (
     <Box>
+      {loading && (
+        <Group mb={16} justify="center">
+          <Loader size="sm" />
+          <Text c="dimmed" size="sm">Loading tasks...</Text>
+        </Group>
+      )}
+
+      {error && (
+        <Alert color="red" mb={16}>
+          {error}
+        </Alert>
+      )}
+
       <Box mb={20} className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <FilterSelect
           value={statusFilter}
@@ -175,9 +189,7 @@ function TasksView({ tasks }) {
           options={[
             { value: "TODO", label: "To Do" },
             { value: "IN_PROGRESS", label: "In Progress" },
-            { value: "IN_REVIEW", label: "In Review" },
             { value: "COMPLETED", label: "Completed" },
-            { value: "CANCELLED", label: "Cancelled" },
           ]}
         />
         <FilterSelect
@@ -199,7 +211,6 @@ function TasksView({ tasks }) {
             { value: "LOW", label: "Low" },
             { value: "MEDIUM", label: "Medium" },
             { value: "HIGH", label: "High" },
-            { value: "CRITICAL", label: "Critical" },
           ]}
         />
         <FilterSelect
@@ -269,7 +280,7 @@ function TasksView({ tasks }) {
                     </Table.Td>
                     <Table.Td>
                       <Text size="sm" c="dimmed">
-                        {task.assigneeName || "Unassigned"}
+                        {task.assigneeName || task.assigneeEmail || "Unassigned"}
                       </Text>
                     </Table.Td>
                     <Table.Td>
@@ -303,8 +314,16 @@ export default function ProjectDetails() {
   const { projectId } = useParams();
   const navigate = useNavigate();
   const { projects } = useProj();
-  const { tasks } = useTask();
-  const { loadProjectMembers, clearProjectMembers } = useProjMember();
+  const {
+    tasks,
+    loading: tasksLoading,
+    error: tasksError,
+    addLoading: taskCreating,
+    createTask,
+    loadTasks,
+    clearTasks,
+  } = useTask();
+  const { members, loadProjectMembers, clearProjectMembers } = useProjMember();
   // will be using them to decide weather to show manage members button and project members list in project details page. will be used in future iterations when we implement project roles and permissions
 
   const [activeTab, setActiveTab] = useState("tasks");
@@ -312,6 +331,8 @@ export default function ProjectDetails() {
   const [manageMembersOpened, setManageMembersOpened] = useState(false);
   const [canUseProjectActions, setCanUseProjectActions] = useState(false);
   const [checkingProjectAccess, setCheckingProjectAccess] = useState(true);
+  const [projectAccessError, setProjectAccessError] = useState(null);
+  const [createTaskSubmitError, setCreateTaskSubmitError] = useState(null);
 
   const project = useMemo(
     () => (projects || []).find((item) => String(item.id) === String(projectId)),
@@ -357,13 +378,34 @@ export default function ProjectDetails() {
     },
   ];
 
-  const handleCreateTaskSubmit = (taskPayload) => {
-    // Endpoint integration placeholder:
-    // dispatch(createTask({ projectId, taskData: taskPayload }))
-    console.log("Create task submit placeholder:", {
-      projectId,
-      taskPayload,
-    });
+  const assigneeOptions = useMemo(
+    () =>
+      (members || []).map((member) => ({
+        value: member.userEmail,
+        label: member.memberName || member.userEmail,
+      })),
+    [members],
+  );
+
+  const handleCreateTaskSubmit = async (taskPayload) => {
+    setCreateTaskSubmitError(null);
+
+    try {
+      await createTask(projectId, taskPayload).unwrap();
+      notifications.show({
+        title: "Success",
+        message: "Task created successfully",
+        color: "green",
+      });
+      setCreateTaskOpened(false);
+    } catch (error) {
+      const message = error || "Failed to create task";
+      setCreateTaskSubmitError(message);
+    }
+  };
+
+  const handleCreateTaskClose = () => {
+    setCreateTaskSubmitError(null);
     setCreateTaskOpened(false);
   };
 
@@ -371,7 +413,18 @@ export default function ProjectDetails() {
 // Backend already enforces project-members-only for this endpoint.
 // So:
 // Success => user is project member => allow actions.
-// Failure => user not allowed (or other error) => hide actions.
+// 403/not-member => hide actions.
+// Other failures => hide actions and show a helpful warning message.
+
+  useEffect(() => {
+    if (!projectId) return;
+
+    loadTasks(projectId);
+
+    return () => {
+      clearTasks();
+    };
+  }, [clearTasks, loadTasks, projectId]);
 
   useEffect(() => {
     let active = true;
@@ -386,15 +439,24 @@ export default function ProjectDetails() {
       }
 
       setCheckingProjectAccess(true);
+      setProjectAccessError(null);
 
       try {
         await loadProjectMembers(projectId).unwrap();
         if (active) {
           setCanUseProjectActions(true);
         }
-      } catch {
+      } catch (error) {
         if (active) {
+          const errorMessage = String(error || "").toLowerCase();
+          const isPermissionError =
+            errorMessage.includes("not a member of this project") ||
+            errorMessage.includes("forbidden");
+
           setCanUseProjectActions(false);
+          if (!isPermissionError) {
+            setProjectAccessError("Could not verify project permissions right now. Some actions may be temporarily unavailable.");
+          }
         }
       } finally {
         if (active) {
@@ -408,6 +470,7 @@ export default function ProjectDetails() {
     return () => {
       active = false;
       clearProjectMembers();
+      setProjectAccessError(null);
     };
   }, [clearProjectMembers, loadProjectMembers, projectId]);
 
@@ -469,6 +532,12 @@ export default function ProjectDetails() {
         mb={32}
         className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4"
       >
+        {projectAccessError && (
+          <Box className="md:col-span-2 xl:col-span-4">
+            <Alert color="yellow">{projectAccessError}</Alert>
+          </Box>
+        )}
+
         {stats.map((stat, index) => (
           <ProjectStatCard key={index} {...stat} />
         ))}
@@ -507,16 +576,19 @@ export default function ProjectDetails() {
         ))}
       </Box>
 
-      {activeTab === "tasks" && <TasksView tasks={tasks} />}
+      {activeTab === "tasks" && <TasksView tasks={tasks} loading={tasksLoading} error={tasksError} />}
       {activeTab === "calendar" && <ComingSoonPanel icon={<CalendarTabIcon />} title="Calendar" />}
       {activeTab === "analytics" && <ComingSoonPanel icon={<AnalyticsTabIcon />} title="Analytics" />}
       {activeTab === "settings" && <ComingSoonPanel icon={<SettingsTabIcon />} title="Settings" />}
 
       <CreateTask
         opened={createTaskOpened}
-        onClose={() => setCreateTaskOpened(false)}
+        onClose={handleCreateTaskClose}
         onSubmit={handleCreateTaskSubmit}
+        assigneeOptions={assigneeOptions}
         projectName={project?.name}
+        submitting={taskCreating}
+        submitError={createTaskSubmitError}
       />
 
       <ManageProjectMembers

@@ -8,6 +8,7 @@ import {
 	Group,
 	Button,
 	Stack,
+	Alert,
 } from "@mantine/core";
 
 const TASK_TYPE_OPTIONS = [
@@ -52,13 +53,12 @@ export default function CreateTask({
 	onSubmit,
 	assigneeOptions = [],
 	projectName,
+	submitting = false,
+	submitError = null,
 }) {
 	const [formData, setFormData] = useState(initialFormState);
 
-	const mergedAssigneeOptions = useMemo(
-		() => [{ value: "", label: "Unassigned" }, ...assigneeOptions],
-		[assigneeOptions]
-	);
+	const mergedAssigneeOptions = useMemo(() => assigneeOptions, [assigneeOptions]);
 
 	const handleChange = (field, value) => {
 		setFormData((prev) => ({ ...prev, [field]: value ?? "" }));
@@ -69,15 +69,18 @@ export default function CreateTask({
 		onClose();
 	};
 
-	const handleSubmit = (event) => {
+	const handleSubmit = async (event) => {
 		event.preventDefault();
 
-		// Endpoint integration hook: parent can dispatch create task thunk here.
+		if (!formData.assignedToEmail) {
+			return;
+		}
+
 		if (onSubmit) {
-			onSubmit({
+			await onSubmit({
 				...formData,
 				dueDate: formData.dueDate || null,
-				assignedToEmail: formData.assignedToEmail || null,
+				assignedToEmail: formData.assignedToEmail,
 			});
 			return;
 		}
@@ -101,6 +104,8 @@ export default function CreateTask({
 		>
 			<form onSubmit={handleSubmit}>
 				<Stack gap="md" mt="sm">
+					{submitError && <Alert color="red">{submitError}</Alert>}
+
 					<TextInput
 						label="Title"
 						placeholder="Task title"
@@ -146,6 +151,10 @@ export default function CreateTask({
 							value={formData.assignedToEmail}
 							onChange={(value) => handleChange("assignedToEmail", value)}
 							radius="md"
+							required
+							searchable
+							placeholder="Select project member"
+							nothingFoundMessage="No project members available"
 						/>
 						<Select
 							label="Status"
@@ -168,11 +177,11 @@ export default function CreateTask({
 					/>
 
 					<Group justify="flex-end" mt="md">
-						<Button variant="default" onClick={handleClose}>
+						<Button variant="default" onClick={handleClose} disabled={submitting}>
 							Cancel
 						</Button>
-						<Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-							Create Task
+						<Button type="submit" className="bg-blue-600 hover:bg-blue-700" disabled={submitting}>
+							{submitting ? "Creating..." : "Create Task"}
 						</Button>
 					</Group>
 				</Stack>
