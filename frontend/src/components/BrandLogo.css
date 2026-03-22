@@ -1,0 +1,48 @@
+.brand-logo-wrap {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 176px;
+}
+
+.brand-logo-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 1px 4px rgba(37, 99, 235, 0.12));
+}
+
+.brand-logo-copy {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+}
+
+.brand-logo-title {
+  font-family: "Poppins", "Segoe UI", sans-serif;
+  font-size: 1.12rem;
+  font-weight: 700;
+  letter-spacing: 0.002em;
+  color: #334e9a;
+}
+
+.brand-logo-subtitle {
+  margin-top: 2px;
+  font-family: "Poppins", "Segoe UI", sans-serif;
+  font-size: 0.54rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #64748b;
+  opacity: 0.86;
+}
+
+@media (max-width: 1100px) {
+  .brand-logo-wrap {
+    min-width: auto;
+  }
+
+  .brand-logo-subtitle {
+    display: none;
+  }
+}

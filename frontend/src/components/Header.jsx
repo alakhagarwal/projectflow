@@ -1,7 +1,7 @@
 import { TextInput, Avatar, ActionIcon, Group, Box, Menu } from "@mantine/core";
 import "./Header.css";
 import { useAuth } from "../redux/hooks/useAuth";
-import { useOrg } from "../redux/hooks/useOrg";
+import BrandLogo from "./BrandLogo";
 
 const SearchIcon = () => (
   <svg
@@ -32,7 +32,6 @@ const ThemeIcon = () => (
 );
 
 export default function Header() {
-  const {clearAllOrganizations} = useOrg();
   const { fullName,logout } = useAuth();
   const getInitials = (name) => {
     if (!name) return "U"; // Fallback for null/undefined
@@ -51,19 +50,26 @@ export default function Header() {
 
   return (
     <Box
-      p={15}
-      className="h-16 bg-white border-b border-gray-200 px-6 flex items-center justify-between"
+      px={20}
+      py={10}
+      className="bg-white border-b border-slate-200 flex items-center justify-between"
     >
-      {/* Search Bar */}
-      <TextInput
-        placeholder="Search projects, tasks..."
-        leftSection={<SearchIcon />}
-        className="header-search-input"
-        w={384}
-      />
+      <Group gap="md" align="center" wrap="nowrap" className="min-w-0 flex-1">
+        <BrandLogo />
+
+        {/* Search Bar */}
+        <TextInput
+          placeholder="Search projects, tasks..."
+          leftSection={<SearchIcon />}
+          className="header-search-input"
+          w={420}
+          radius="md"
+          size="md"
+        />
+      </Group>
 
       {/* Right Section */}
-      <Group gap="md">
+      <Group gap="sm">
         <ActionIcon
           variant="subtle"
           color="gray"
@@ -75,7 +81,7 @@ export default function Header() {
         </ActionIcon>
         <Menu shadow="md" width={200} className="header-menu">
           <Menu.Target>
-            <Avatar color="blue" radius="xl" size="md">
+            <Avatar color="blue" radius="xl" size="md" className="header-avatar">
               {initials}
             </Avatar>
           </Menu.Target>
