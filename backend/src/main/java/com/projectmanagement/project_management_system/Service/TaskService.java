@@ -11,6 +11,7 @@ import com.projectmanagement.project_management_system.Exception.InvalidRequestE
 import com.projectmanagement.project_management_system.Exception.ResourceNotFoundException;
 import com.projectmanagement.project_management_system.Exception.UnauthorizedException;
 import com.projectmanagement.project_management_system.Repository.OrganizationMemberRepository;
+import com.projectmanagement.project_management_system.Repository.OrganizationRepository;
 import com.projectmanagement.project_management_system.Repository.ProjectMemberRepository;
 import com.projectmanagement.project_management_system.Repository.ProjectRepository;
 import com.projectmanagement.project_management_system.Repository.TaskRepository;
@@ -30,6 +31,7 @@ public class TaskService {
     private final ProjectRepository projectRepository;
     private final ProjectMemberRepository projectMemberRepository;
     private final OrganizationMemberRepository organizationMemberRepository;
+    private final OrganizationRepository organizationRepository;
 
     @Transactional
     public TaskResponseDTO createTask(TaskCreateDTO taskCreateDTO, String createdByEmail, Long projectId) {
@@ -128,7 +130,6 @@ public class TaskService {
 
     }
 
-
 //    public List<TaskResponseDTO> getTasksByOrganization(Long orgID, String username) {
 //        // Get the user
 //        User user = userRepository.findByEmail(username)
@@ -176,4 +177,49 @@ public class TaskService {
 //
 //
 //    }
+
+    public List<TaskResponseDTO> getAssignedTasksInOrganization(Long orgID, String username) {
+        // Get the user
+        User user = userRepository.findByEmail(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        // Check if organization exists
+        organizationRepository.findById(orgID)
+                .orElseThrow(() -> new ResourceNotFoundException("Organization not found"));
+
+        // Verify user is a member of this organization
+        organizationMemberRepository
+                .findByUserIdAndOrganizationIdAndMemberStatus(user.getId(), orgID, MemberStatus.ACTIVE)
+                .orElseThrow(() -> new UnauthorizedException("You are not a member of this organization"));
+
+        // Get all projects in this organization
+        List<Project> projectsInOrg = projectRepository.findByOrganizationId(orgID);
+
+        // Get all tasks assigned to the user in these projects
+        // Note: No project membership check needed - if user is not a project member,
+        // they won't have any tasks assigned in that project anyway
+        List<TaskResponseDTO> tasks = projectsInOrg.stream()
+                .flatMap(project -> taskRepository.findByProjectIdAndAssignedToId(project.getId(), user.getId()).stream())
+                .map(task -> {
+                    TaskResponseDTO responseDTO = new TaskResponseDTO();
+                    responseDTO.setId(task.getId());
+                    responseDTO.setTitle(task.getTitle());
+                    responseDTO.setDescription(task.getDescription());
+                    responseDTO.setProjectId(task.getProject().getId());
+                    responseDTO.setProjectName(task.getProject().getName());
+                    responseDTO.setAssignedToEmail(task.getAssignedTo().getEmail());
+                    responseDTO.setAssignedToName(task.getAssignedTo().getFirstName() + " " + task.getAssignedTo().getLastName());
+                    responseDTO.setCreatedByEmail(task.getCreatedBy().getEmail());
+                    responseDTO.setCreatedByName(task.getCreatedBy().getFirstName() + " " + task.getCreatedBy().getLastName());
+                    responseDTO.setDueDate(task.getDueDate());
+                    responseDTO.setTaskType(task.getTaskType());
+                    responseDTO.setTaskPriority(task.getTaskPriority());
+                    responseDTO.setTaskStatus(task.getTaskStatus());
+                    responseDTO.setCreatedAt(task.getCreatedAt());
+                    return responseDTO;
+                })
+                .toList();
+
+        return tasks;
+    }
 }

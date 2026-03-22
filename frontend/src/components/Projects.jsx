@@ -10,6 +10,7 @@ import {
   Select,
   Loader,
   Alert,
+  Tooltip,
 } from "@mantine/core";
 import { useNavigate } from "react-router-dom";
 import CreateProj from "./CreateProj";
@@ -50,9 +51,17 @@ export default function Projects() {
   const [statusFilter, setStatusFilter] = useState(null);
   const [priorityFilter, setPriorityFilter] = useState(null);
   const [createModalOpened, setCreateModalOpened] = useState(false);
-  const { organizations } = useOrg();
+  const { organizations, selectedOrganization } = useOrg();
   const { projects, loading, error } = useProj();
   const navigate = useNavigate();
+
+  const isAdminInOrganization = () => {
+    if (!selectedOrganization) return false;
+    // Check various possible field names for role from the backend
+    // The backend may return: userRole, organizationRole, role, or membership.role
+    const role = selectedOrganization.userRole || selectedOrganization.organizationRole || selectedOrganization.role;
+    return role && role.toUpperCase() === "ADMIN";
+  };
 
   const statusOptions = [
     { value: "PLANNING", label: "Planning" },
@@ -121,14 +130,21 @@ export default function Projects() {
             Manage and track your projects
           </Text>
         </Box>
-        <Button
-          leftSection={<PlusIcon />}
-          size="md"
-          className="bg-blue-500 hover:bg-blue-600"
-          onClick={() => setCreateModalOpened(true)}
+        <Tooltip 
+          label="Only admins can create projects" 
+          disabled={isAdminInOrganization()}
+          position="bottom"
         >
-          New Project
-        </Button>
+          <Button
+            leftSection={<PlusIcon />}
+            size="md"
+            className={isAdminInOrganization() ? "bg-blue-500 hover:bg-blue-600" : "bg-gray-400 cursor-not-allowed"}
+            onClick={() => setCreateModalOpened(true)}
+            disabled={!isAdminInOrganization()}
+          >
+            New Project
+          </Button>
+        </Tooltip>
       </Group>
 
       {/* Search and Filters */}

@@ -10,7 +10,6 @@ import {
   Alert,
   Select,
 } from "@mantine/core";
-import { DateInput } from "@mantine/dates";
 import { notifications } from "@mantine/notifications";
 import { useOrg } from "../redux/hooks/useOrg";
 import { useProj } from "../redux/hooks/useProj";
@@ -41,6 +40,12 @@ export default function CreateProj({ opened, onClose}) {
 
   const [errorMsg, setErrorMsg] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
+
+  const getTomorrowDate = () => {
+    const date = new Date();
+    date.setDate(date.getDate() + 1);
+    return date.toISOString().split("T")[0];
+  };
 
   // Project Status options
   const projectStatusOptions = [
@@ -280,29 +285,29 @@ export default function CreateProj({ opened, onClose}) {
           }}
         >
           {/* Start Date */}
-          <DateInput
+          <TextInput
             label="Start Date"
-            placeholder="Select start date"
-            value={formData.startDate}
-            onChange={(value) => handleChange("startDate", value)}
+            placeholder="YYYY-MM-DD"
+            type="date"
+            value={formData.startDate || ""}
+            onChange={(event) => handleChange("startDate", event.currentTarget.value)}
             required
             size="md"
-            minDate={new Date()}
+            min={getTomorrowDate()}
             error={fieldErrors.startDate}
-            valueFormat="YYYY-MM-DD"
           />
 
           {/* End Date */}
-          <DateInput
+          <TextInput
             label="End Date"
-            placeholder="Select end date"
-            value={formData.endDate}
-            onChange={(value) => handleChange("endDate", value)}
+            placeholder="YYYY-MM-DD"
+            type="date"
+            value={formData.endDate || ""}
+            onChange={(event) => handleChange("endDate", event.currentTarget.value)}
             required
             size="md"
-            minDate={formData.startDate || new Date()}
+            min={formData.startDate || getTomorrowDate()}
             error={fieldErrors.endDate}
-            valueFormat="YYYY-MM-DD"
           />
         </Box>
 

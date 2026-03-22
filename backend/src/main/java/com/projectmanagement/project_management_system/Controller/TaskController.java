@@ -39,5 +39,10 @@ public class TaskController {
         return ResponseEntity.ok(taskResponseDTOS);
     }
 
+    @GetMapping("/assigned-tasks/{orgID}")
+    public ResponseEntity<?> getAssignedTasks(@PathVariable Long orgID, @AuthenticationPrincipal UserDetails userDetails) {
+        List<TaskResponseDTO> taskResponseDTOS = taskService.getAssignedTasksInOrganization(orgID, userDetails.getUsername());
+        return ResponseEntity.ok(taskResponseDTOS);
+    }
 
 }

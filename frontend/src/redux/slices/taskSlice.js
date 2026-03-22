@@ -8,6 +8,9 @@ const initialState = {
   error: null,
   addError: null,
   addedTask: null,
+  assignedTasks: [],
+  assignedTasksLoading: false,
+  assignedTasksError: null,
 };
 
 const TASK_STATUS_MAP = {
@@ -20,6 +23,14 @@ const normalizeTask = (task) => {
   if (!task) return task;
 
   const normalizedStatus = TASK_STATUS_MAP[task.taskStatus] || task.taskStatus;
+  console.log("Normalizing task:", {
+    id: task.id,
+    title: task.title,
+    dueDate: task.dueDate,
+    taskStatus: task.taskStatus,
+    normalizedStatus: normalizedStatus,
+  });
+  
   return {
     ...task,
     status: normalizedStatus,
@@ -55,6 +66,18 @@ export const fetchTasks = createAsyncThunk(
   },
 );
 
+export const fetchAssignedTasks = createAsyncThunk(
+  "task/fetchAssignedTasks",
+  async (organizationId, { rejectWithValue }) => {
+    try {
+      const data = await api.get(`/task/assigned-tasks/${organizationId}`);
+      return data;
+    } catch (error) {
+      return rejectWithValue(error || "Failed to fetch assigned tasks");
+    }
+  },
+);
+
 const taskSlice = createSlice({
   name: "task",
   initialState,
@@ -66,6 +89,9 @@ const taskSlice = createSlice({
       state.error = null;
       state.addError = null;
       state.addedTask = null;
+      state.assignedTasks = [];
+      state.assignedTasksLoading = false;
+      state.assignedTasksError = null;
     },
   },
   extraReducers: (builder) => {
@@ -96,6 +122,20 @@ const taskSlice = createSlice({
       .addCase(fetchTasks.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      .addCase(fetchAssignedTasks.pending, (state) => {
+        state.assignedTasksLoading = true;
+        state.assignedTasksError = null;
+      })
+      .addCase(fetchAssignedTasks.fulfilled, (state, action) => {
+        state.assignedTasksLoading = false;
+        const rawData = action.payload || [];
+        const normalizedData = rawData.map(normalizeTask);
+        state.assignedTasks = normalizedData;
+      })
+      .addCase(fetchAssignedTasks.rejected, (state, action) => {
+        state.assignedTasksLoading = false;
+        state.assignedTasksError = action.payload;
       });
   },
 });

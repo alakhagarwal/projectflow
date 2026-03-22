@@ -1,8 +1,11 @@
-import { Box, Text, Button, Paper, Group, Badge, Alert } from "@mantine/core";
+import { useMemo, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { Box, Text, Button, Paper, Group, Badge, Alert, Tooltip } from "@mantine/core";
 import StatsCard from "./StatsCard";
 import { useAuth } from "../redux/hooks/useAuth";
 import { useProj } from "../redux/hooks/useProj";
 import { useOrg } from "../redux/hooks/useOrg";
+import { useTask } from "../redux/hooks/useTask";
 
 // Icons
 const FolderIcon = () => (
@@ -108,7 +111,21 @@ export default function Dashboard() {
   const { fullName, isValidating } = useAuth();
   const { projects, loading, error } = useProj();
   const { selectedOrganization } = useOrg();
-  
+  const { assignedTasks, assignedTasksLoading, assignedTasksError, loadAssignedTasks, clearTasks } = useTask();
+  const navigate = useNavigate();
+
+  // Load assigned tasks when organization changes
+  useEffect(() => {
+    if (selectedOrganization?.id) {
+      console.log("Organization changed to:", selectedOrganization.id, "Loading tasks...");
+      loadAssignedTasks(selectedOrganization.id);
+    } else {
+      console.warn("Organization ID not available");
+      // Clear tasks if no org is selected
+      clearTasks();
+    }
+  }, [selectedOrganization?.id, loadAssignedTasks, clearTasks]);
+
   const capitalizedName = () => {
     return fullName
       ? fullName
@@ -118,8 +135,83 @@ export default function Dashboard() {
       : "User";
   };
 
-  const completedProjects = projects?.filter(p => p.projectStatus === "COMPLETED").length || 0;
-  
+  const formatDate = (dateString) => {
+    if (!dateString) return "Not set";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  const getStatusColor = (status) => {
+    const statusColorMap = {
+      PLANNING: "gray",
+      ACTIVE: "blue",
+      COMPLETED: "green",
+      ON_HOLD: "yellow",
+      CANCELLED: "red",
+    };
+    return statusColorMap[status] || "gray";
+  };
+
+  const getPriorityLabel = (priority) => {
+    if (!priority) return "Not set";
+    return priority.charAt(0) + priority.slice(1).toLowerCase();
+  };
+
+  const isAdminInOrganization = () => {
+    if (!selectedOrganization) return false;
+    // Check various possible field names for role from the backend
+    // The backend may return: userRole, organizationRole, role, or membership.role
+    const role = selectedOrganization.userRole || selectedOrganization.organizationRole || selectedOrganization.role;
+    return role && role.toUpperCase() === "ADMIN";
+  };
+
+  const completedProjects = projects?.filter((project) => project.projectStatus === "COMPLETED").length || 0;
+
+  const overdueProjects = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return (projects || []).filter((project) => {
+      if (!project.endDate) return false;
+      if (project.projectStatus === "COMPLETED" || project.projectStatus === "CANCELLED") return false;
+      const endDate = new Date(project.endDate);
+      endDate.setHours(0, 0, 0, 0);
+      return endDate < today;
+    });
+  }, [projects]);
+
+  const projectOverviewItems = useMemo(() => {
+    return [...(projects || [])]
+      .sort((a, b) => {
+        const firstDate = a.endDate ? new Date(a.endDate).getTime() : Number.MAX_SAFE_INTEGER;
+        const secondDate = b.endDate ? new Date(b.endDate).getTime() : Number.MAX_SAFE_INTEGER;
+        return firstDate - secondDate;
+      })
+      .slice(0, 6);
+  }, [projects]);
+
+  const myTasks = useMemo(() => {
+    return (assignedTasks || []).filter((task) => {
+      return task.status !== "COMPLETED";
+    });
+  }, [assignedTasks]);
+
+  const overdueTasks = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return (assignedTasks || []).filter((task) => {
+      if (!task.dueDate) return false;
+      if (task.status === "COMPLETED") return false;
+      const dueDate = new Date(task.dueDate);
+      dueDate.setHours(0, 0, 0, 0);
+      return dueDate < today;
+    });
+  }, [assignedTasks]);
+
   const stats = [
     {
       title: "Total Projects",
@@ -137,15 +229,15 @@ export default function Dashboard() {
     },
     {
       title: "My Tasks",
-      value: "0",
-      subtitle: "assigned to me",
+      value: assignedTasksLoading ? "..." : myTasks.length,
+      subtitle: assignedTasksLoading ? "loading..." : "assigned to me",
       icon: <UsersIcon />,
       color: "purple",
     },
     {
       title: "Overdue",
-      value: "0",
-      subtitle: "need attention",
+      value: assignedTasksLoading ? "..." : overdueTasks.length,
+      subtitle: assignedTasksLoading ? "loading..." : "tasks past deadline",
       icon: <AlertIcon />,
       color: "orange",
     },
@@ -153,12 +245,21 @@ export default function Dashboard() {
 
   return (
     <Box p={30} className="flex-1 bg-slate-50 overflow-auto ">
-      {/* Error Alert */}
+      {/* Error Alert - Projects */}
       {error && (
         <Alert color="red" mb="md" title="Error Loading Projects" withCloseButton>
           {error}
         </Alert>
       )}
+
+      {/* Error Alert - Tasks */}
+      {assignedTasksError && (
+        <Alert color="orange" mb="md" title="Error Loading Tasks" withCloseButton>
+          {assignedTasksError}
+        </Alert>
+      )}
+
+
       
       {/* Header */}
       <Group justify="space-between" align="flex-start" mb="xl">
@@ -170,14 +271,22 @@ export default function Dashboard() {
             Here's what's happening with your projects today
           </Text>
         </Box>
-        <Button
-          leftSection={<PlusIcon />}
-          size="md"
-          radius="md"
-          className="bg-blue-600 hover:bg-blue-700"
+        <Tooltip 
+          label="Only admins can create projects" 
+          disabled={isAdminInOrganization()}
+          position="bottom"
         >
-          New Project
-        </Button>
+          <Button
+            leftSection={<PlusIcon />}
+            size="md"
+            radius="md"
+            className={isAdminInOrganization() ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-400 cursor-not-allowed"}
+            onClick={() => navigate("/projects")}
+            disabled={!isAdminInOrganization()}
+          >
+            New Project
+          </Button>
+        </Tooltip>
       </Group>
 
       {/* Stats Grid */}
@@ -207,23 +316,56 @@ export default function Dashboard() {
               color="gray"
               rightSection={<ArrowRightIcon />}
               size="sm"
+              onClick={() => navigate("/projects")}
             >
               View all
             </Button>
           </Group>
 
-          {/* Empty State */}
-          <Box className="flex flex-col items-center justify-center py-16 overflow-auto">
-            <Box className="p-6 bg-slate-100 rounded-2xl mb-4">
-              <FolderIcon />
+          {projectOverviewItems.length > 0 ? (
+            <Box className="space-y-3">
+              {projectOverviewItems.map((project) => (
+                <Paper
+                  key={project.id}
+                  p="md"
+                  radius="md"
+                  mb={10}
+                  withBorder
+                  className="border-gray-100 hover:shadow-sm transition-shadow cursor-pointer"
+                  onClick={() => navigate(`/projects/${project.id}`)}
+                >
+                  <Group justify="space-between" align="flex-start" mb={6}>
+                    <Box>
+                      <Text fw={600} className="text-slate-900">{project.name}</Text>
+                      <Text size="sm" c="dimmed" lineClamp={1}>
+                        {project.description || "No description"}
+                      </Text>
+                    </Box>
+                    <Badge color={getStatusColor(project.projectStatus)} variant="light">
+                      {project.projectStatus || "PLANNING"}
+                    </Badge>
+                  </Group>
+
+                  <Group justify="space-between">
+                    <Text size="xs" c="dimmed">Priority: {getPriorityLabel(project.projectPriority)}</Text>
+                    <Text size="xs" c="dimmed">Due: {formatDate(project.endDate)}</Text>
+                  </Group>
+                </Paper>
+              ))}
             </Box>
-            <Text c="dimmed" size="lg" mb="md">
-              No projects yet
-            </Text>
-            <Button radius="md" color="blue" className="hover:bg-blue-700">
-              Create your First Project
-            </Button>
-          </Box>
+          ) : (
+            <Box className="flex flex-col items-center justify-center py-16 overflow-auto">
+              <Box className="p-6 bg-slate-100 rounded-2xl mb-4">
+                <FolderIcon />
+              </Box>
+              <Text c="dimmed" size="lg" mb="md">
+                No projects yet
+              </Text>
+              <Button radius="md" color="blue" className="hover:bg-blue-700" onClick={() => navigate("/projects")}>
+                Create your First Project
+              </Button>
+            </Box>
+          )}
         </Paper>
 
         {/* Right Sidebar */}
@@ -240,12 +382,24 @@ export default function Dashboard() {
                 <Text fw={600}>My Tasks</Text>
               </Group>
               <Badge color="blue" variant="light" size="lg">
-                0
+                {assignedTasksLoading ? "..." : myTasks.length}
               </Badge>
             </Group>
-            <Text c="dimmed" size="sm" ta="center" py="xl">
-              No my tasks
-            </Text>
+
+            {myTasks.length > 0 ? (
+              <Box className="space-y-2">
+                {myTasks.slice(0, 5).map((task) => (
+                  <Box key={task.id} mb={5} p={7} className="border-b border-gray-200 pb-2">
+                    <Text size="sm" fw={500} lineClamp={1}>{task.title}</Text>
+                    <Text size="xs" c="dimmed">Due {formatDate(task.dueDate)}</Text>
+                  </Box>
+                ))}
+              </Box>
+            ) : (
+              <Text c="dimmed" size="sm" ta="center" py="xl">
+                No my tasks
+              </Text>
+            )}
           </Paper>
 
           {/* Overdue Card */}
@@ -260,12 +414,24 @@ export default function Dashboard() {
                 <Text fw={600}>Overdue</Text>
               </Group>
               <Badge color="red" variant="light" size="lg">
-                0
+                {assignedTasksLoading ? "..." : overdueTasks.length}
               </Badge>
             </Group>
-            <Text c="dimmed" size="sm" ta="center" py="xl">
-              No overdue
-            </Text>
+
+            {overdueTasks.length > 0 ? (
+              <Box className="space-y-2">
+                {overdueTasks.slice(0, 4).map((task) => (
+                  <Box key={task.id} mb={5} className="border-b border-gray-200 pb-2">
+                    <Text size="sm" fw={500} lineClamp={1}>{task.title}</Text>
+                    <Text size="xs" c="dimmed">Due {formatDate(task.dueDate)}</Text>
+                  </Box>
+                ))}
+              </Box>
+            ) : (
+              <Text c="dimmed" size="sm" ta="center" py="xl">
+                No overdue tasks
+              </Text>
+            )}
           </Paper>
         </Box>
       </Box>
