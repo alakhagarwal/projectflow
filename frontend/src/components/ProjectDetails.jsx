@@ -8,6 +8,7 @@ import { useProjMember } from "../redux/hooks/useprojMember";
 import CreateTask from "./CreateTask";
 import ManageProjectMembers from "./ManageProjectMembers";
 import Calender from "./Calender";
+import Analytics from "./Analytics";
 
 const ArrowLeftIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -579,7 +580,14 @@ export default function ProjectDetails() {
 
       {activeTab === "tasks" && <TasksView tasks={tasks} loading={tasksLoading} error={tasksError} />}
       {activeTab === "calendar" && <Calender tasks={tasks} />}
-      {activeTab === "analytics" && <ComingSoonPanel icon={<AnalyticsTabIcon />} title="Analytics" />}
+      {activeTab === "analytics" && (
+        <Analytics
+          tasks={tasks}
+          members={members}
+          loading={tasksLoading}
+          project={project}
+        />
+      )}
       {activeTab === "settings" && <ComingSoonPanel icon={<SettingsTabIcon />} title="Settings" />}
 
       <CreateTask

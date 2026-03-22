@@ -5,8 +5,8 @@ const LogoGlyph = () => (
   <svg width="32" height="32" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <linearGradient id="projectFlowGradient" x1="2" y1="2" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-        <stop stopColor="#60A5FA" />
-        <stop offset="0.55" stopColor="#3B82F6" />
+        <stop stopColor="#93C5FD" />
+        <stop offset="0.5" stopColor="#3B82F6" />
         <stop offset="1" stopColor="#2563EB" />
       </linearGradient>
     </defs>
@@ -27,7 +27,7 @@ export default function BrandLogo() {
       </Box>
       <Box className="brand-logo-copy">
         <Text className="brand-logo-title">ProjectFlow</Text>
-        <Text className="brand-logo-subtitle">Plan • Track • Deliver</Text>
+        {/* <Text className="brand-logo-subtitle">Plan • Track • Deliver</Text> */}
       </Box>
     </Box>
   );
