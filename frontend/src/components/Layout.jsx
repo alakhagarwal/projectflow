@@ -13,7 +13,7 @@ function App() {
     useOrg();
   const [showForcedOrgModal, setShowForcedOrgModal] = useState(false);
   const { loadProjects, clearAllProjects } = useProj();
-  const { clearTasks } = useTask();
+  const { loadAssignedTasks, clearTasks } = useTask();
 
   useEffect(() => {
     if (organizations.length === 0 && !loading) {
@@ -23,12 +23,15 @@ function App() {
 
   useEffect(() => {
     if (selectedOrganization) {
-      console.log("Layout: Organization changed to", selectedOrganization.id, "- Clearing projects and tasks...");
       clearAllProjects();
       clearTasks();
       loadProjects(selectedOrganization.id);
+      loadAssignedTasks(selectedOrganization.id);
+    } else {
+      clearAllProjects();
+      clearTasks();
     }
-  }, [selectedOrganization?.id, loadProjects, clearAllProjects, clearTasks]);
+  }, [selectedOrganization?.id, loadProjects, clearAllProjects, loadAssignedTasks, clearTasks]);
 
   useEffect(() => {
     if (!loading && organizations.length === 0) {

@@ -322,7 +322,7 @@ export default function ProjectDetails() {
     addLoading: taskCreating,
     createTask,
     loadTasks,
-    clearTasks,
+    clearOnlyProjectTasks,
   } = useTask();
   const { members, loadProjectMembers, clearProjectMembers } = useProjMember();
   // will be using them to decide weather to show manage members button and project members list in project details page. will be used in future iterations when we implement project roles and permissions
@@ -423,9 +423,9 @@ export default function ProjectDetails() {
     loadTasks(projectId);
 
     return () => {
-      clearTasks();
+      clearOnlyProjectTasks();
     };
-  }, [clearTasks, loadTasks, projectId]);
+  }, [clearOnlyProjectTasks, loadTasks, projectId]);
 
   useEffect(() => {
     let active = true;

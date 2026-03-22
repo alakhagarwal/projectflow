@@ -23,13 +23,6 @@ const normalizeTask = (task) => {
   if (!task) return task;
 
   const normalizedStatus = TASK_STATUS_MAP[task.taskStatus] || task.taskStatus;
-  console.log("Normalizing task:", {
-    id: task.id,
-    title: task.title,
-    dueDate: task.dueDate,
-    taskStatus: task.taskStatus,
-    normalizedStatus: normalizedStatus,
-  });
   
   return {
     ...task,
@@ -82,6 +75,14 @@ const taskSlice = createSlice({
   name: "task",
   initialState,
   reducers: {
+    clearProjectTasks: (state) => {
+      state.tasks = [];
+      state.loading = false;
+      state.error = null;
+      state.addedTask = null;
+      state.addLoading = false;
+      state.addError = null;
+    },
     clearTaskState: (state) => {
       state.tasks = [];
       state.loading = false;
@@ -140,5 +141,5 @@ const taskSlice = createSlice({
   },
 });
 
-export const { clearTaskState } = taskSlice.actions;
+export const { clearTaskState, clearProjectTasks } = taskSlice.actions;
 export default taskSlice.reducer;

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Text,
@@ -10,6 +10,8 @@ import {
   Badge,
 } from "@mantine/core";
 import { useOrg } from "../redux/hooks/useOrg";
+import { useProj } from "../redux/hooks/useProj";
+import { useTask } from "../redux/hooks/useTask";
 import CreateOrg from "./CreateOrg";
 import { NavLink} from "react-router-dom";
 
@@ -96,7 +98,13 @@ const ChevronIcon = ({ direction = "down" }) => (
     stroke="currentColor"
     strokeWidth="2"
     style={{
-      transform: direction === "right" ? "rotate(-90deg)" : "rotate(0)",
+      transform:
+        direction === "right"
+          ? "rotate(-90deg)"
+          : direction === "up"
+            ? "rotate(180deg)"
+            : "rotate(0deg)",
+      transition: "transform 0.2s ease",
     }}
   >
     <path d="M6 9l6 6 6-6" />
@@ -119,15 +127,31 @@ const PlusIcon = () => (
 
 export default function Sidebar() {
   const [orgMenuOpened, setOrgMenuOpened] = useState(false);
-  const activeItem = location.pathname.split('/')[1] || 'dashboard';
   const [createOrgOpened, setCreateOrgOpened] = useState(false);
-  const { organizations, loading, error, loadOrganizations,setSelectedOrg, selectedOrganization } = useOrg();
+  const [tasksExpanded, setTasksExpanded] = useState(true);
+  const [projectsExpanded, setProjectsExpanded] = useState(true);
+  const { organizations, loading, error, setSelectedOrg, selectedOrganization } = useOrg();
+  const { projects } = useProj();
+  const { assignedTasks } = useTask();
+
+  const myActiveTasks = useMemo(
+    () => (assignedTasks || []).filter((task) => task.status !== "COMPLETED"),
+    [assignedTasks],
+  );
+
+  const formatDueDate = (dateString) => {
+    if (!dateString) return "No due date";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    });
+  };
 
   useEffect(() => {
     if (organizations.length > 0 && !selectedOrganization) {
       setSelectedOrg(organizations[0]);
     }
-  }, [organizations, selectedOrganization]);
+  }, [organizations, selectedOrganization, setSelectedOrg]);
 
   const handleOrgSelect = (org) => {
     setSelectedOrg(org);
@@ -143,7 +167,7 @@ export default function Sidebar() {
 
   return (
     <Box
-      p={22}
+      p={16}
       className="w-70 h-screen bg-white border-r border-gray-200 flex flex-col gap-1.5"
     >
       {/* Organization Selector */}
@@ -155,7 +179,7 @@ export default function Sidebar() {
           width={240}
         >
           <Menu.Target>
-            <UnstyledButton pt={5} pb={16} className="w-full rounded-lg hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-100">
+            <UnstyledButton pt={4} pb={10} className="w-full rounded-lg hover:bg-blue-50 transition-colors border border-transparent hover:border-blue-100">
               <Group gap="sm">
                 {/* Show logo if available, otherwise show initials */}
                 {selectedOrganization?.logoUrl ? (
@@ -233,7 +257,7 @@ export default function Sidebar() {
       )}
 
       {loading && (
-        <Box className="p-4 text-center">
+        <Box p="md" className="text-center">
           <Text size="sm" c="dimmed">
             Loading organizations...
           </Text>
@@ -241,7 +265,7 @@ export default function Sidebar() {
       )}
 
       {error && (
-        <Box className="p-4 bg-red-50 rounded-lg">
+        <Box p="md" className="bg-red-50 rounded-lg">
           <Text size="sm" c="red">
             {error}
           </Text>
@@ -283,10 +307,10 @@ export default function Sidebar() {
         </Box>
       )}
 
-      <Divider />
+      <Divider my="md" />
 
       {/* Navigation */}
-      <Box className="flex-1 flex flex-col">
+      <Box className="flex-1 flex flex-col overflow-hidden">
         {navItems.map((item) => (
           <NavLink
             key={item.id}
@@ -312,36 +336,120 @@ export default function Sidebar() {
         <Divider my="md" />
 
         {/* My Tasks */}
-        <div
-          className="mx-2 rounded-lg px-3 py-2.5 bg-gray-50 transition-all flex items-center justify-between cursor-pointer"
+        <Box
+          mx={2}
+          px={10}
+          py={8}
+          className="rounded-lg bg-slate-50 border border-slate-200 transition-all flex items-center justify-between cursor-pointer hover:bg-slate-100"
+          onClick={() => setTasksExpanded((prev) => !prev)}
         >
-          <div className="flex items-center gap-3 padding-2">
+          <Box className="flex items-center gap-3">
             <span className="text-gray-500">
               <TaskIcon />
             </span>
             <span className="text-sm font-normal text-gray-900">
               My Tasks
             </span>
-            <Badge size="xs" variant="light" color="gray" radius="sm">
-              0
+            <Badge
+              size="xs"
+              variant="light"
+              color={myActiveTasks.length > 0 ? "blue" : "gray"}
+              radius="sm"
+            >
+              {myActiveTasks.length}
             </Badge>
-          </div>
+          </Box>
           <span className="text-gray-400">
-            <ChevronIcon direction="right" />
+            <ChevronIcon direction={tasksExpanded ? "down" : "right"} />
           </span>
-        </div>
+        </Box>
+
+        {tasksExpanded && (
+          <Box
+            mx={2}
+            mt="xs"
+            p={8}
+            className="rounded-lg border border-slate-200 bg-white max-h-52 overflow-auto"
+          >
+            {myActiveTasks.length === 0 ? (
+              <Text size="xs" c="dimmed" ta="center" py="xs">
+                No tasks
+              </Text>
+            ) : (
+              <Box className="space-y-2">
+                {myActiveTasks.slice(0, 6).map((task) => (
+                  <Box
+                    key={task.id}
+                    p={8}
+                    className="rounded-md border border-slate-100 bg-slate-50 hover:bg-blue-50 hover:border-blue-100 transition-colors"
+                  >
+                    <Text size="xs" fw={600} lineClamp={1} c="dark">
+                      {task.title}
+                    </Text>
+                    <Text size="xs" c="dimmed" mt={2}>
+                      Due {formatDueDate(task.dueDate)}
+                    </Text>
+                  </Box>
+                ))}
+              </Box>
+            )}
+          </Box>
+        )}
 
         <Divider my="md" />
 
         {/* Projects Section */}
-        <div className="px-4 py-2 flex items-center justify-between">
+        <Box
+          mx={2}
+          px={10}
+          py={8}
+          className="rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-between cursor-pointer hover:bg-slate-100"
+          onClick={() => setProjectsExpanded((prev) => !prev)}
+        >
           <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-            Projects
+            Projects ({projects?.length || 0})
           </span>
           <span className="text-gray-400">
-            <ChevronIcon direction="right" />
+            <ChevronIcon direction={projectsExpanded ? "down" : "right"} />
           </span>
-        </div>
+        </Box>
+
+        {projectsExpanded && (
+          <Box
+            mx={2}
+            mt="xs"
+            p={8}
+            className="rounded-lg border border-slate-200 bg-white max-h-56 overflow-auto"
+          >
+            {(projects || []).length === 0 ? (
+              <Text size="xs" c="dimmed" ta="center" py="xs">
+                No projects
+              </Text>
+            ) : (
+              <Box className="space-y-1">
+                {(projects || []).slice(0, 8).map((project) => (
+                  <NavLink
+                    key={project.id}
+                    to={`/projects/${project.id}`}
+                    style={{ textDecoration: "none" }}
+                  >
+                    <Box
+                      p={8}
+                      className="rounded-md border border-slate-100 bg-slate-50 hover:bg-blue-50 hover:border-blue-100 transition-colors"
+                    >
+                      <Text size="xs" fw={600} lineClamp={1} c="dark">
+                        {project.name}
+                      </Text>
+                      <Text size="xs" c="dimmed" lineClamp={1} mt={2}>
+                        {project.projectStatus || "PLANNING"}
+                      </Text>
+                    </Box>
+                  </NavLink>
+                ))}
+              </Box>
+            )}
+          </Box>
+        )}
       </Box>
 
       {/* Create Organization Modal */}

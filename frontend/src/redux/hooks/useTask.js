@@ -1,5 +1,5 @@
 import { useDispatch, useSelector } from "react-redux";
-import { clearTaskState, createTask, fetchTasks, fetchAssignedTasks } from "../slices/taskSlice";
+import { clearTaskState, clearProjectTasks, createTask, fetchTasks, fetchAssignedTasks } from "../slices/taskSlice";
 import { useCallback } from "react";
 
 export const useTask = () => {
@@ -41,11 +41,16 @@ export const useTask = () => {
     dispatch(clearTaskState());
   }, [dispatch]);
 
+  const clearOnlyProjectTasks = useCallback(() => {
+    dispatch(clearProjectTasks());
+  }, [dispatch]);
+
   return {
     createTask: createTaskAsync,
     loadTasks,
     loadAssignedTasks,
     clearTasks,
+    clearOnlyProjectTasks,
     tasks,
     loading,
     addLoading,

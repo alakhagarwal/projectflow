@@ -1,4 +1,4 @@
-import { useMemo, useEffect } from "react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, Text, Button, Paper, Group, Badge, Alert, Tooltip } from "@mantine/core";
 import StatsCard from "./StatsCard";
@@ -111,20 +111,8 @@ export default function Dashboard() {
   const { fullName, isValidating } = useAuth();
   const { projects, loading, error } = useProj();
   const { selectedOrganization } = useOrg();
-  const { assignedTasks, assignedTasksLoading, assignedTasksError, loadAssignedTasks, clearTasks } = useTask();
+  const { assignedTasks, assignedTasksLoading, assignedTasksError } = useTask();
   const navigate = useNavigate();
-
-  // Load assigned tasks when organization changes
-  useEffect(() => {
-    if (selectedOrganization?.id) {
-      console.log("Organization changed to:", selectedOrganization.id, "Loading tasks...");
-      loadAssignedTasks(selectedOrganization.id);
-    } else {
-      console.warn("Organization ID not available");
-      // Clear tasks if no org is selected
-      clearTasks();
-    }
-  }, [selectedOrganization?.id, loadAssignedTasks, clearTasks]);
 
   const capitalizedName = () => {
     return fullName
