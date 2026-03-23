@@ -218,7 +218,7 @@ export default function Projects() {
                 p="lg"
                 radius="lg"
                 className="border border-gray-100 hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={() => navigate(`/projects/${project.id}`)}
+                onClick={() => navigate(`/app/projects/${project.id}`)}
               >
                 {/* Project Name */}
                 <Text size="lg" fw={600} mb={4} className="text-gray-900">

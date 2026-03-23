@@ -315,7 +315,7 @@ export default function Sidebar() {
         {navItems.map((item) => (
           <NavLink
             key={item.id}
-            to={`/${item.id}`}
+            to={`/app/${item.id}`}
             style={({ isActive }) => ({
               display: 'block',
               padding: '10px',
@@ -453,7 +453,7 @@ export default function Sidebar() {
                 {(projects || []).slice(0, 8).map((project) => (
                   <NavLink
                     key={project.id}
-                    to={`/projects/${project.id}`}
+                    to={`/app/projects/${project.id}`}
                     style={{ textDecoration: "none" }}
                   >
                     <Box

@@ -76,9 +76,15 @@ const theme = createTheme({
   },
 });
 
+import LandingPage from "./components/LandingPage.jsx";
+
 const router = createBrowserRouter([
   {
     path: "/",
+    element: <LandingPage />,
+  },
+  {
+    path: "/app",
     element: (
       <ProtectedRoute>
         <Layout />
@@ -86,7 +92,7 @@ const router = createBrowserRouter([
     ),
     children: [
       {
-        index: true, // Default route at "/"
+        index: true,
         element: <Dashboard />,
       },
       {
@@ -99,7 +105,7 @@ const router = createBrowserRouter([
       },
       {
         path: "projects/:projectId",
-        element: <ProjectDetails />, // in the outlet of layout
+        element: <ProjectDetails />,
       },
       {
         path: "team",

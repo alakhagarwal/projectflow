@@ -65,7 +65,7 @@ useEffect(() => {
     validateToken();
   }
   if (isAuthenticated && validationChecked) {
-    navigate("/", { replace: true });
+    navigate("/app", { replace: true });
   }
 }, [isAuthenticated, validationChecked, navigate]);
 
@@ -75,7 +75,7 @@ useEffect(() => {
     try {
       await login({ email, password }).unwrap();
       // ☝️ .unwrap() CONVERTS rejected action into thrown error
-      navigate("/"); // Need to add useNavigate
+      navigate("/app");
     } catch (err) {
       // Error already in Redux state, will show automatically
       console.log("Login failed:", err);

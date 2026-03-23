@@ -15,11 +15,8 @@ import java.util.Optional;
 
 @Repository
 public interface OrganizationMemberRepository extends JpaRepository<OrganizationMember,Long> {
-
-    // Check if user is a member of organization
     Optional<OrganizationMember> findByUserIdAndOrganizationId(Long userId, Long organizationId);
 
-    // Check if user has specific role in organization
     Optional<OrganizationMember> findByUserIdAndOrganizationIdAndOrganizationRole(
             Long userId,
             Long organizationId,
@@ -37,11 +34,9 @@ public interface OrganizationMemberRepository extends JpaRepository<Organization
 
     Optional<OrganizationMember> findByUserIdAndOrganizationIdAndMemberStatus(Long userId, Long organizationId, MemberStatus memberStatus);
 
-    // Find all organizations where user is a member (both INVITED and ACTIVE)
     @Query("SELECT om FROM OrganizationMember om WHERE om.user = :user")
     List<OrganizationMember> findByUser(@Param("user") User user);
 
-    // Find all members of an organization
     List<OrganizationMember> findByOrganizationId(Long organizationId);
 
 }

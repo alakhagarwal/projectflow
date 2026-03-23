@@ -26,7 +26,6 @@ public class JWTUtil {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    // Generate JWT Token
     public String generateToken(String username) {
 
         return Jwts.builder()
@@ -34,7 +33,7 @@ public class JWTUtil {
                 .issuedAt(new Date())
                 .expiration(
                         new Date(System.currentTimeMillis() + expirationMinutes * 60 * 1000)
-                ) // in milliseconds
+                )
                 .signWith(getSigningKey())
                 .compact();
     }
@@ -46,7 +45,7 @@ public class JWTUtil {
                 .issuedAt(new Date())
                 .expiration(
                         new Date(System.currentTimeMillis() + expirationMinutes * 60 * 1000L)
-                ) // in milliseconds
+                )
                 .signWith(getSigningKey())
                 .compact();
     }
@@ -60,7 +59,7 @@ public class JWTUtil {
                     .getPayload()
                     .getSubject();
         } catch (JwtException e) {
-            return null; // Invalid or expired JWT
+            return null;
         }
     }
 }

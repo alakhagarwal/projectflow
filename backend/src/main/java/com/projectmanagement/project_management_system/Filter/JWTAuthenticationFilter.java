@@ -54,12 +54,10 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
                     authenticationManager.authenticate(authToken);
 
             if (authResult != null && authResult.isAuthenticated()) {
-                String token = jwtUtil.generateToken(authResult.getName()); // uses configured expiration
+                String token = jwtUtil.generateToken(authResult.getName());
 
-                // Return the token in a standard place (header) + JSON body for easy frontend use.
                 response.setHeader("Authorization", "Bearer " + token);
 
-                // returning full name also
                 User user =(User) userService.loadUserByUsername(loginRequest.getEmail());
                 String fullName = user.getFirstName() + (user.getLastName() != null ? " " + user.getLastName() : "");
 
@@ -73,7 +71,7 @@ public class JWTAuthenticationFilter extends OncePerRequestFilter {
                 ));
 
                 response.getWriter().flush();
-                return; // stop filter chain for the login endpoint
+                return;
             }
         } catch (AuthenticationException e) {
             response.setStatus(HttpStatus.UNAUTHORIZED.value());

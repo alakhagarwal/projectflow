@@ -35,8 +35,6 @@ public class ProjectService {
 
     @Transactional
     public ProjResponse save(CreateProjDTO createProjDTO, String creatorEmail) {
-
-        // 1. Date validation
         if (createProjDTO.getEndDate().isBefore(createProjDTO.getStartDate())) {
             throw new InvalidRequestException("End date must be after start date");
         }
@@ -45,15 +43,12 @@ public class ProjectService {
             throw new InvalidRequestException("Start date cannot be in the past");
         }
 
-        // 2. Fetch creator
         User createdBy = userRepository.findByEmail(creatorEmail)
                 .orElseThrow(() -> new ResourceNotFoundException("User", "email", creatorEmail));
 
-        // 3. Fetch organization
         Organization organization = organizationRepository.findById(createProjDTO.getOrganizationId())
                 .orElseThrow(() -> new ResourceNotFoundException("Organization", "id", createProjDTO.getOrganizationId()));
 
-        // 4. Check if creator is an ADMIN of the organization
         organizationMemberRepository
                 .findByUserIdAndOrganizationIdAndOrganizationRole(
                         createdBy.getId(),
@@ -62,16 +57,13 @@ public class ProjectService {
                 )
                 .orElseThrow(() -> new UnauthorizedException("Only organization admins can create projects"));
 
-        // 5. Fetch team lead
         User teamLead = userRepository.findByEmail(createProjDTO.getTeamLeadEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("User", "email", createProjDTO.getTeamLeadEmail()));
 
-        // 6. Check if team lead is a member of the organization
         organizationMemberRepository
                 .findByUserIdAndOrganizationId(teamLead.getId(), organization.getId())
                 .orElseThrow(() -> new InvalidRequestException("Team lead must be a member of the organization"));
 
-        // 7. Create and save project
         Project project = new Project();
         project.setName(createProjDTO.getName());
         project.setDescription(createProjDTO.getDescription());
@@ -85,7 +77,6 @@ public class ProjectService {
 
         Project savedProject = projectRepository.save(project);
 
-        // 8. Add team lead as project member
         ProjectMember projectMember = new ProjectMember();
         projectMember.setProject(savedProject);
         projectMember.setProjectRole(ProjectRole.LEAD);
@@ -122,7 +113,6 @@ public class ProjectService {
                 .orElseThrow(() -> new UnauthorizedException("You are not a member of this organization"));
 
         if(orgMembership.getOrganizationRole() == OrganizationRole.ADMIN) {
-            // If user is an admin, return all projects in the organization
             List<Project> projects = projectRepository.findByOrganizationId(organizationId);
             return projects.stream().map(project -> new ProjResponse(
                     project.getId(),
@@ -140,7 +130,6 @@ public class ProjectService {
 
        List <ProjectMember> projectMemberships = projectMemberRepository.findByUserId(requestedBy.getId());
 
-        // fetch the projects using projID fetched in projectMemberships
         Set<Long> seenProjectIds = new HashSet<>();
         return projectMemberships.stream()
                 .filter(pm -> pm.getProject().getOrganization().getId().equals(organizationId))
@@ -229,7 +218,6 @@ public class ProjectService {
         User requestedBy = userRepository.findByEmail(requstedByUser.getUsername())
                 .orElseThrow(() -> new ResourceNotFoundException("User", "email", requstedByUser.getUsername()));
 
-        // 1. Verify project exists
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new ResourceNotFoundException("Project", "id", projectId));
 

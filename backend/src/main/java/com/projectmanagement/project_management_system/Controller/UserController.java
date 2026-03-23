@@ -34,15 +34,13 @@ public class UserController {
         return ResponseEntity.ok("Fetched user details successfully");
     }
 
-    @GetMapping("/validate-token")  // Fixed: removed duplicate /auth and typo
+    @GetMapping("/validate-token")
     public ResponseEntity<?> validateToken() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
 
-        // Fetch user details to get full name
         UserResponseDTO userDetails = userService.getUserByEmail(email);
 
-        // Return success response with user info
         Map<String, Object> response = new HashMap<>();
         response.put("valid", true);
         response.put("email", email);

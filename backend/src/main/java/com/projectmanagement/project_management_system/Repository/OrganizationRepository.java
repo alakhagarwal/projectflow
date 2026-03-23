@@ -13,7 +13,6 @@ public interface OrganizationRepository extends JpaRepository<Organization, Long
 
     boolean existsBySlug(String slug);
 
-    // Find organizations created by a user with the given email
     @Query("SELECT o FROM Organization o WHERE o.createdBy.email = :email")
     List<Organization> findByCreatorEmail(@Param("email") String email);
 

@@ -269,7 +269,7 @@ export default function Dashboard() {
             size="md"
             radius="md"
             className={isAdminInOrganization() ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-400 cursor-not-allowed"}
-            onClick={() => navigate("/projects")}
+            onClick={() => navigate("/app/projects")}
             disabled={!isAdminInOrganization()}
           >
             New Project
@@ -304,7 +304,7 @@ export default function Dashboard() {
               color="gray"
               rightSection={<ArrowRightIcon />}
               size="sm"
-              onClick={() => navigate("/projects")}
+              onClick={() => navigate("/app/projects")}
             >
               View all
             </Button>
@@ -320,7 +320,7 @@ export default function Dashboard() {
                   mb={10}
                   withBorder
                   className="border-gray-100 hover:shadow-sm transition-shadow cursor-pointer"
-                  onClick={() => navigate(`/projects/${project.id}`)}
+                  onClick={() => navigate(`/app/projects/${project.id}`)}
                 >
                   <Group justify="space-between" align="flex-start" mb={6}>
                     <Box>
@@ -349,7 +349,7 @@ export default function Dashboard() {
               <Text c="dimmed" size="lg" mb="md">
                 No projects yet
               </Text>
-              <Button radius="md" color="blue" className="hover:bg-blue-700" onClick={() => navigate("/projects")}>
+              <Button radius="md" color="blue" className="hover:bg-blue-700" onClick={() => navigate("/app/projects")}>
                 Create your First Project
               </Button>
             </Box>

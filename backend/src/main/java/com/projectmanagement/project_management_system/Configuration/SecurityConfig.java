@@ -56,7 +56,6 @@ public class SecurityConfig {
             JWTUtil jwtUtil
     ) throws Exception {
 
-        // Authentication filter responsible for login
         JWTAuthenticationFilter jwtAuthFilter =
                 new JWTAuthenticationFilter(authenticationManager, jwtUtil, userService);
 
@@ -65,7 +64,7 @@ public class SecurityConfig {
 
 
         http
-                .cors(cors -> cors.configure(http)) // Enable CORS with the CorsConfig
+                .cors(cors -> cors.configure(http))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/register", "/generate-token", "/upload", "/download/**", "/org/accept-invite").permitAll()
                         .anyRequest().authenticated()
