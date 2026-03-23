@@ -9,6 +9,8 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+
 @Service
 @RequiredArgsConstructor
 public class EmailService {
@@ -45,6 +47,49 @@ public class EmailService {
             System.err.println("❌ Unexpected error sending email to: " + toEmail);
             e.printStackTrace();
             throw new InvalidRequestException("Failed to send invitation email: " + e.getMessage());
+        }
+    }
+
+    public void sendTaskAssignedEmail(String toEmail,
+                                      String assigneeName,
+                                      String assignedByName,
+                                      String projectName,
+                                      Long projectId,
+                                      Long taskId,
+                                      String taskTitle,
+                                      String taskDescription,
+                                      LocalDate dueDate) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail);
+            helper.setTo(toEmail);
+            helper.setSubject("New task assigned: " + taskTitle);
+
+            String htmlContent = buildTaskAssignedEmailHtml(
+                    assigneeName,
+                    assignedByName,
+                    projectName,
+                    projectId,
+                    taskId,
+                    taskTitle,
+                    taskDescription,
+                    dueDate
+            );
+            helper.setText(htmlContent, true);
+
+            mailSender.send(message);
+
+            System.out.println("Task assignment email sent to: " + toEmail);
+        } catch (MessagingException e) {
+            System.err.println("Failed to send task assignment email to: " + toEmail);
+            e.printStackTrace();
+            throw new InvalidRequestException("Failed to send task assignment email");
+        } catch (Exception e) {
+            System.err.println("Unexpected error sending task assignment email to: " + toEmail);
+            e.printStackTrace();
+            throw new InvalidRequestException("Failed to send task assignment email: " + e.getMessage());
         }
     }
 
@@ -152,5 +197,99 @@ public class EmailService {
                 "    </div>\n" +
                 "</body>\n" +
                 "</html>";
+    }
+
+    private String buildTaskAssignedEmailHtml(String assigneeName,
+                                              String assignedByName,
+                                              String projectName,
+                                              Long projectId,
+                                              Long taskId,
+                                              String taskTitle,
+                                              String taskDescription,
+                                              LocalDate dueDate) {
+        String safeAssigneeName = assigneeName == null || assigneeName.isBlank() ? "there" : escapeHtml(assigneeName);
+        String safeAssignedByName = assignedByName == null || assignedByName.isBlank() ? "a teammate" : escapeHtml(assignedByName);
+        String safeProjectName = projectName == null || projectName.isBlank() ? "your project" : escapeHtml(projectName);
+        String safeTaskTitle = taskTitle == null || taskTitle.isBlank() ? "New Task" : escapeHtml(taskTitle);
+        String safeDescription = taskDescription == null || taskDescription.isBlank() ? "No description provided" : escapeHtml(taskDescription);
+        String dueDateText = dueDate != null ? dueDate.toString() : "Not specified";
+        String taskLink = frontendUrl;
+
+        return "<!DOCTYPE html>\n" +
+                "<html>\n" +
+                "<head>\n" +
+                "    <meta charset=\"UTF-8\">\n" +
+                "    <style>\n" +
+                "        body {\n" +
+                "            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;\n" +
+                "            background-color: #f5f7fa;\n" +
+                "            margin: 0;\n" +
+                "            padding: 0;\n" +
+                "        }\n" +
+                "        .email-container {\n" +
+                "            max-width: 760px;\n" +
+                "            margin: 30px auto;\n" +
+                "            background: #ffffff;\n" +
+                "            border-radius: 12px;\n" +
+                "            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);\n" +
+                "            overflow: hidden;\n" +
+                "        }\n" +
+                "        .content {\n" +
+                "            padding: 36px 34px;\n" +
+                "            color: #1f2937;\n" +
+                "        }\n" +
+                "        .task-title {\n" +
+                "            color: #1877f2;\n" +
+                "            font-size: 34px;\n" +
+                "            font-weight: 700;\n" +
+                "            margin: 0 0 14px 0;\n" +
+                "        }\n" +
+                "        .task-box {\n" +
+                "            border: 1px solid #d1d5db;\n" +
+                "            border-radius: 8px;\n" +
+                "            padding: 20px;\n" +
+                "            margin: 12px 0 26px 0;\n" +
+                "            background: #fafafa;\n" +
+                "        }\n" +
+                "        .button {\n" +
+                "            display: inline-block;\n" +
+                "            background-color: #1877f2;\n" +
+                "            color: #ffffff !important;\n" +
+                "            padding: 14px 28px;\n" +
+                "            text-decoration: none;\n" +
+                "            border-radius: 8px;\n" +
+                "            font-weight: 700;\n" +
+                "            font-size: 28px;\n" +
+                "        }\n" +
+                "        .muted {\n" +
+                "            color: #6b7280;\n" +
+                "        }\n" +
+                "    </style>\n" +
+                "</head>\n" +
+                "<body>\n" +
+                "    <div class=\"email-container\">\n" +
+                "        <div class=\"content\">\n" +
+                "            <h1>Hi " + safeAssigneeName + ",</h1>\n" +
+                "            <p>You've been assigned a new task in <strong>" + safeProjectName + "</strong> by <strong>" + safeAssignedByName + "</strong>:</p>\n" +
+                "            <div class=\"task-title\">" + safeTaskTitle + "</div>\n" +
+                "            <div class=\"task-box\">\n" +
+                "                <p><strong>Description:</strong> " + safeDescription + "</p>\n" +
+                "                <p><strong>Due Date:</strong> " + dueDateText + "</p>\n" +
+                "            </div>\n" +
+                "            <a href=\"" + taskLink + "\" class=\"button\">View Task</a>\n" +
+                "            <p class=\"muted\" style=\"margin-top: 24px;\">Please review and complete it before the due date.</p>\n" +
+                "        </div>\n" +
+                "    </div>\n" +
+                "</body>\n" +
+                "</html>";
+    }
+
+    private String escapeHtml(String input) {
+        return input
+                .replace("&", "&amp;")
+                .replace("<", "&lt;")
+                .replace(">", "&gt;")
+                .replace("\"", "&quot;")
+                .replace("'", "&#39;");
     }
 }

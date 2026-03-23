@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +33,7 @@ public class TaskService {
     private final ProjectMemberRepository projectMemberRepository;
     private final OrganizationMemberRepository organizationMemberRepository;
     private final OrganizationRepository organizationRepository;
+    private final EmailService emailService;
 
     @Transactional
     public TaskResponseDTO createTask(TaskCreateDTO taskCreateDTO, String createdByEmail, Long projectId) {
@@ -62,6 +64,32 @@ public class TaskService {
 
         task = taskRepository.save(task);
 
+        String assignedToName = assignedTo.getFirstName() + " " + assignedTo.getLastName();
+        String createdByName = createdBy.getFirstName() + " " + createdBy.getLastName();
+        Long savedTaskId = task.getId();
+        String savedTaskTitle = task.getTitle();
+        String savedTaskDescription = task.getDescription();
+        java.time.LocalDate savedTaskDueDate = task.getDueDate();
+
+        // Best-effort notification: send email in background so SMTP latency does not block API response.
+        CompletableFuture.runAsync(() -> {
+            try {
+                emailService.sendTaskAssignedEmail(
+                        assignedTo.getEmail(),
+                        assignedToName.trim(),
+                        createdByName.trim(),
+                        project.getName(),
+                        project.getId(),
+                        savedTaskId,
+                        savedTaskTitle,
+                        savedTaskDescription,
+                        savedTaskDueDate
+                );
+            } catch (Exception ex) {
+                System.err.println("Task created but assignment email could not be sent to: " + assignedTo.getEmail());
+            }
+        });
+
         TaskResponseDTO responseDTO = new TaskResponseDTO();
         responseDTO.setId(task.getId());
         responseDTO.setTitle(task.getTitle());
@@ -75,8 +103,8 @@ public class TaskService {
         responseDTO.setTaskStatus(task.getTaskStatus());
 
         responseDTO.setProjectName(project.getName());
-        responseDTO.setAssignedToName(assignedTo.getFirstName() + " " + assignedTo.getLastName());
-        responseDTO.setCreatedByName(createdBy.getFirstName() + " " + createdBy.getLastName());
+        responseDTO.setAssignedToName(assignedToName.trim());
+        responseDTO.setCreatedByName(createdByName.trim());
         responseDTO.setCreatedAt(task.getCreatedAt());
 
         return responseDTO;

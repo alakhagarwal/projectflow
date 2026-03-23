@@ -388,7 +388,7 @@ export default function ProjectDetails() {
       await createTask(projectId, taskPayload).unwrap();
       notifications.show({
         title: "Success",
-        message: "Task created successfully",
+        message: "Task created! An email notification is being sent to the assignee.",
         color: "green",
       });
       setCreateTaskOpened(false);
