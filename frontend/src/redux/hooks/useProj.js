@@ -1,10 +1,10 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { useCallback } from 'react';
-import { fetchProjects, clearProjects,createProject } from '../slices/projSlice'; 
+import { fetchProjects, clearProjects, createProject, updateProject } from '../slices/projSlice';
 
 export const useProj = () => {
     const dispatch = useDispatch();
-    const { projects, loading, error, currentOrgId } = useSelector((state) => state.proj);    
+    const { projects, loading, error, currentOrgId, updateLoading, updateError } = useSelector((state) => state.proj);    
 
     const loadProjects = useCallback((organizationId) => {
         return dispatch(fetchProjects(organizationId));
@@ -18,5 +18,9 @@ export const useProj = () => {
         return dispatch(createProject(projectData));
     }, [dispatch]);
 
-    return { projects, loading, error, currentOrgId, loadProjects, clearAllProjects, createNewProject };
+    const updateProjectAsync = useCallback((projectData) => {
+        return dispatch(updateProject(projectData));
+    }, [dispatch]);
+
+    return { projects, loading, error, currentOrgId, loadProjects, clearAllProjects, createNewProject, updateProjectAsync, updateLoading, updateError };
 }

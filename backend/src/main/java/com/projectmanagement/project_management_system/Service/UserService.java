@@ -1,10 +1,12 @@
 package com.projectmanagement.project_management_system.Service;
 
 import com.projectmanagement.project_management_system.DTO.RegisterRequestDTO;
+import com.projectmanagement.project_management_system.DTO.UpdateUserDTO;
 import com.projectmanagement.project_management_system.DTO.UserResponseDTO;
 import com.projectmanagement.project_management_system.Entity.User;
 import com.projectmanagement.project_management_system.Exception.DuplicateEmailException;
 import com.projectmanagement.project_management_system.Repository.UserRepository;
+import jakarta.validation.Valid;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -51,4 +53,12 @@ public class UserService implements UserDetailsService {
     }
 
 
+    public UserResponseDTO updateUserProfile(String email, @Valid UpdateUserDTO request) {
+
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+
+
+        return null;
+    }
 }

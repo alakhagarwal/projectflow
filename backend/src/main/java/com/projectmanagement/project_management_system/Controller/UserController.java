@@ -1,6 +1,7 @@
 package com.projectmanagement.project_management_system.Controller;
 
 import com.projectmanagement.project_management_system.DTO.RegisterRequestDTO;
+import com.projectmanagement.project_management_system.DTO.UpdateUserDTO;
 import com.projectmanagement.project_management_system.DTO.UserResponseDTO;
 import com.projectmanagement.project_management_system.Service.UserService;
 import jakarta.validation.Valid;
@@ -49,5 +50,15 @@ public class UserController {
         response.put("message", "Token is valid");
 
         return ResponseEntity.ok(response);
+    }
+
+    @PutMapping("/update-profile")
+    public ResponseEntity<?> updateUserProfile(@Valid @RequestBody UpdateUserDTO request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
+
+        UserResponseDTO updatedUser = userService.updateUserProfile(email, request);
+
+        return ResponseEntity.ok(updatedUser);
     }
 }

@@ -6,6 +6,8 @@ const initialState = {
   loading: false,
   error: null,
   currentOrgId: null,
+  updateLoading: false,
+  updateError: null,
 };
 
 export const fetchProjects = createAsyncThunk(
@@ -53,6 +55,25 @@ export const createProject = createAsyncThunk(
   },
 );
 
+export const updateProject = createAsyncThunk(
+  "projects/updateProject",
+  async ({ projectId, name, description, projectStatus, projectPriority, startDate, endDate }, { rejectWithValue }) => {
+    try {
+      const data = await api.put(`/proj/${projectId}`, {
+        name,
+        description,
+        projectStatus,
+        projectPriority,
+        startDate,
+        endDate,
+      });
+      return data;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  },
+);
+
 const projSlice = createSlice({
   name: "proj",
   initialState, 
@@ -90,9 +111,24 @@ const projSlice = createSlice({
       .addCase(createProject.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      .addCase(updateProject.pending, (state) => {
+        state.updateLoading = true;
+        state.updateError = null;
+      })
+      .addCase(updateProject.fulfilled, (state, action) => {
+        state.updateLoading = false;
+        const index = state.projects.findIndex((p) => p.id === action.payload.id);
+        if (index !== -1) {
+          state.projects[index] = action.payload;
+        }
+      })
+      .addCase(updateProject.rejected, (state, action) => {
+        state.updateLoading = false;
+        state.updateError = action.payload;
       });
   },
 });
 
 export const { clearProjects } = projSlice.actions;
-export default projSlice.reducer;
+export default projSlice.reducer;

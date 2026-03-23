@@ -9,6 +9,7 @@ import CreateTask from "./CreateTask";
 import ManageProjectMembers from "./ManageProjectMembers";
 import Calender from "./Calender";
 import Analytics from "./Analytics";
+import Settings from "./Settings";
 
 const ArrowLeftIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -301,21 +302,12 @@ function TasksView({ tasks, loading, error }) {
   );
 }
 
-function ComingSoonPanel({ icon, title }) {
-  return (
-    <Paper radius="lg" withBorder p="xl" className="border-slate-200 bg-white">
-      <Box py={40} className="flex flex-col items-center justify-center text-center">
-        <Box mb={16} p={24} className="rounded-2xl bg-slate-100 text-slate-500">{icon}</Box>
-        <p className="text-lg font-medium text-slate-700">{title} - coming soon</p>
-      </Box>
-    </Paper>
-  );
-}
+
 
 export default function ProjectDetails() {
   const { projectId } = useParams();
   const navigate = useNavigate();
-  const { projects } = useProj();
+  const { projects, updateProjectAsync, updateLoading } = useProj();
   const {
     tasks,
     loading: tasksLoading,
@@ -588,7 +580,13 @@ export default function ProjectDetails() {
           project={project}
         />
       )}
-      {activeTab === "settings" && <ComingSoonPanel icon={<SettingsTabIcon />} title="Settings" />}
+      {activeTab === "settings" && (
+        <Settings
+          project={project}
+          updateProjectAsync={updateProjectAsync}
+          updateLoading={updateLoading}
+        />
+      )}
 
       <CreateTask
         opened={createTaskOpened}
