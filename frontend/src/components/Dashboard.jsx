@@ -377,7 +377,7 @@ export default function Dashboard() {
             {myTasks.length > 0 ? (
               <Box className="space-y-2">
                 {myTasks.slice(0, 5).map((task) => (
-                  <Box key={task.id} mb={5} p={7} className="border-b border-gray-200 pb-2">
+                  <Box key={task.id} mb={5} p={10} className="border-b border-gray-200 pb-2">
                     <Text size="sm" fw={500} lineClamp={1}>{task.title}</Text>
                     <Text size="xs" c="dimmed">Due {formatDate(task.dueDate)}</Text>
                   </Box>

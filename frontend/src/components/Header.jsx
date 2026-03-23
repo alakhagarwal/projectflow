@@ -1,37 +1,9 @@
 import { useState } from "react";
-import { TextInput, Avatar, ActionIcon, Group, Box, Menu, Divider, Text } from "@mantine/core";
+import { Avatar, Group, Box, Menu, Divider, Text } from "@mantine/core";
 import "./Header.css";
 import { useAuth } from "../redux/hooks/useAuth";
 import BrandLogo from "./BrandLogo";
 import ProfileSettingsModal from "./ProfileSettingsModal";
-
-const SearchIcon = () => (
-  <svg
-    width="18"
-    height="18"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-  >
-    <circle cx="11" cy="11" r="8" />
-    <path d="M21 21l-4.35-4.35" />
-  </svg>
-);
-
-const ThemeIcon = () => (
-  <svg
-    width="20"
-    height="20"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-  >
-    <circle cx="12" cy="12" r="5" />
-    <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-  </svg>
-);
 
 const SettingsIcon = () => (
   <svg
@@ -67,7 +39,7 @@ export default function Header() {
   const [settingsOpened, setSettingsOpened] = useState(false);
   
   const getInitials = (name) => {
-    if (!name) return "U"; // Fallback for null/undefined
+    if (!name) return "U";
     return name
       .trim()
       .split(/\s+/)
@@ -75,7 +47,16 @@ export default function Header() {
       .map((word) => word[0].toUpperCase())
       .join("");
   };
+
+  const getAvatarColor = (name) => {
+    if (!name) return "indigo";
+    const colors = ["red", "pink", "grape", "violet", "indigo", "blue", "cyan", "teal", "green", "lime", "orange"];
+    const index = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return colors[index % colors.length];
+  };
+
   const initials = getInitials(fullName);
+  const avatarColor = getAvatarColor(fullName);
 
   const handleLogout = () => {
     logout();
@@ -87,34 +68,15 @@ export default function Header() {
       py={10}
       className="bg-white border-b border-slate-200 flex items-center justify-between"
     >
-      <Group gap="md" align="center" wrap="nowrap" className="min-w-0 flex-1">
+      <Group gap="md" align="center" wrap="nowrap">
         <BrandLogo />
-
-        {/* Search Bar */}
-        <TextInput
-          placeholder="Search projects, tasks..."
-          leftSection={<SearchIcon />}
-          className="header-search-input"
-          w={420}
-          radius="md"
-          size="md"
-        />
       </Group>
 
       {/* Right Section */}
       <Group gap="sm">
-        <ActionIcon
-          variant="subtle"
-          color="gray"
-          size="lg"
-          radius="md"
-          className="header-action-icon"
-        >
-          <ThemeIcon />
-        </ActionIcon>
         <Menu shadow="xl" width={280} position="bottom-end" offset={4}>
           <Menu.Target>
-            <Avatar color="orange.7" radius="xl" size="md" className="header-avatar cursor-pointer">
+            <Avatar color={avatarColor} radius="xl" size="md" className="header-avatar cursor-pointer">
               {initials}
             </Avatar>
           </Menu.Target>

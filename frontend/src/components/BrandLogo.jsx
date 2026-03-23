@@ -5,9 +5,9 @@ const LogoGlyph = () => (
   <svg width="32" height="32" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <linearGradient id="projectFlowGradient" x1="2" y1="2" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-        <stop stopColor="#93C5FD" />
-        <stop offset="0.5" stopColor="#3B82F6" />
-        <stop offset="1" stopColor="#2563EB" />
+        <stop stopColor="#a5b4fc" />
+        <stop offset="0.5" stopColor="#6366f1" />
+        <stop offset="1" stopColor="#4f46e5" />
       </linearGradient>
     </defs>
 
