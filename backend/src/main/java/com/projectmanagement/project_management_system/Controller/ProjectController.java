@@ -4,6 +4,7 @@ import com.projectmanagement.project_management_system.DTO.AddProjectMemberReque
 import com.projectmanagement.project_management_system.DTO.ProjectMemberResponseDTO;
 import com.projectmanagement.project_management_system.DTO.CreateProjDTO;
 import com.projectmanagement.project_management_system.DTO.ProjResponse;
+import com.projectmanagement.project_management_system.DTO.UpdateProjDTO;
 import com.projectmanagement.project_management_system.Service.ProjectService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +43,16 @@ public class ProjectController {
     ) {
         ProjectMemberResponseDTO response = projectService.addMemberToProject(projectId, requestDTO, userDetails.getUsername());
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PutMapping("/{projectId}")
+    public ResponseEntity<ProjResponse> updateProject(
+            @PathVariable Long projectId,
+            @RequestBody @Valid UpdateProjDTO requestDTO,
+            @AuthenticationPrincipal UserDetails userDetails
+    ) {
+        ProjResponse response = projectService.updateProject(projectId, requestDTO, userDetails.getUsername());
+        return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
     @GetMapping("/{projectId}/members")

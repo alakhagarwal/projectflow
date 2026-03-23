@@ -241,7 +241,7 @@ export default function Analytics({ tasks = [], members = [], loading = false, p
 					<Box className="space-y-4">
 						{priorityRows.map((row) => (
 							<Box key={row.priority}>
-								<Group justify="space-between" mb={6}>
+								<Group justify="space-between" mb={6} p={10}> 
 									<Group gap="xs">
 										<Text fw={700} c={PRIORITY_COLOR[row.priority] || "#64748B"}>→</Text>
 										<Text fw={600}>{row.priority.charAt(0) + row.priority.slice(1).toLowerCase()}</Text>
@@ -260,8 +260,8 @@ export default function Analytics({ tasks = [], members = [], loading = false, p
 												? "blue"
 												: "green"
 									}
-									size="sm"
-									radius="xl"
+									size="md"
+									radius="lg"
 								/>
 							</Box>
 						))}

@@ -4,6 +4,7 @@ import com.projectmanagement.project_management_system.DTO.AddProjectMemberReque
 import com.projectmanagement.project_management_system.DTO.CreateProjDTO;
 import com.projectmanagement.project_management_system.DTO.ProjectMemberResponseDTO;
 import com.projectmanagement.project_management_system.DTO.ProjResponse;
+import com.projectmanagement.project_management_system.DTO.UpdateProjDTO;
 import com.projectmanagement.project_management_system.Entity.*;
 import com.projectmanagement.project_management_system.Enums.MemberStatus;
 import com.projectmanagement.project_management_system.Enums.OrganizationRole;
@@ -252,5 +253,56 @@ public class ProjectService {
                     member.getProjectRole()
             );
         }).toList();
+    }
+
+    @Transactional
+    public ProjResponse updateProject(Long projectId, UpdateProjDTO requestDTO, String requestedByEmail) {
+        User requestedBy = userRepository.findByEmail(requestedByEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "email", requestedByEmail));
+
+        Project project = projectRepository.findById(projectId)
+                .orElseThrow(() -> new ResourceNotFoundException("Project", "id", projectId));
+
+        boolean isActiveOrgAdmin = organizationMemberRepository
+                .findByUserIdAndOrganizationIdAndMemberStatus(
+                        requestedBy.getId(),
+                        project.getOrganization().getId(),
+                        MemberStatus.ACTIVE
+                )
+                .map(orgMembership -> orgMembership.getOrganizationRole() == OrganizationRole.ADMIN)
+                .orElse(false);
+
+        boolean isProjectLead = projectMemberRepository
+                .existsByUserIdAndProjectIdAndProjectRole(requestedBy.getId(), projectId, ProjectRole.LEAD);
+
+        if (!isActiveOrgAdmin && !isProjectLead) {
+            throw new UnauthorizedException("Only organization admins or project leads can update this project");
+        }
+
+        if (requestDTO.getEndDate().isBefore(requestDTO.getStartDate())) {
+            throw new InvalidRequestException("End date must be after start date");
+        }
+
+        project.setName(requestDTO.getName());
+        project.setDescription(requestDTO.getDescription());
+        project.setProjectStatus(requestDTO.getProjectStatus());
+        project.setProjectPriority(requestDTO.getProjectPriority());
+        project.setStartDate(requestDTO.getStartDate());
+        project.setEndDate(requestDTO.getEndDate());
+
+        Project updatedProject = projectRepository.save(project);
+
+        return new ProjResponse(
+                updatedProject.getId(),
+                updatedProject.getName(),
+                updatedProject.getDescription(),
+                updatedProject.getOrganization().getId(),
+                updatedProject.getCreatedBy().getEmail(),
+                updatedProject.getTeamLead().getEmail(),
+                updatedProject.getProjectStatus(),
+                updatedProject.getProjectPriority(),
+                updatedProject.getStartDate(),
+                updatedProject.getEndDate()
+        );
     }
 }
