@@ -26,6 +26,10 @@ const initialState = {
   isValidating: false, // Shows loading during validation
   validationChecked: false, // Tracks if we've checked the token
 
+  updateProfileLoading: false,
+  updateProfileError: null,
+  updateProfileSuccess: false,
+
   // we dont have to show any error message on initial load or while
 };
 
@@ -93,6 +97,18 @@ export const loginUser = createAsyncThunk(
 //   meta: { rejectedWithValue: true }
 // }
 
+export const updateProfile = createAsyncThunk(
+  "auth/updateProfile",
+  async (userData, { rejectWithValue }) => {
+    try {
+      const data = await api.put("/auth/update-profile", userData);
+      return data;
+    } catch (error) {
+      return rejectWithValue(error);
+    }
+  }
+);
+
 const authSlice = createSlice({
   name: "auth",
   initialState: initialState,
@@ -117,6 +133,11 @@ const authSlice = createSlice({
       state.registerLoading = false;
       state.registerError = null;
       state.registerSuccess = false;
+    },
+    resetUpdateProfileState: (state) => {
+      state.updateProfileLoading = false;
+      state.updateProfileError = null;
+      state.updateProfileSuccess = false;
     },
   },
   // Handle async actions in extraReducers
@@ -177,10 +198,24 @@ const authSlice = createSlice({
         state.token = null;
         state.email = null;
         state.fullName = null;
+      })
+      .addCase(updateProfile.pending, (state) => {
+        state.updateProfileLoading = true;
+        state.updateProfileError = null;
+        state.updateProfileSuccess = false;
+      })
+      .addCase(updateProfile.fulfilled, (state, action) => {
+        state.updateProfileLoading = false;
+        state.updateProfileSuccess = true;
+        state.fullName = action.payload.firstName + (action.payload.lastName ? " " + action.payload.lastName : "");
+      })
+      .addCase(updateProfile.rejected, (state, action) => {
+        state.updateProfileLoading = false;
+        state.updateProfileError = action.payload || "Failed to update profile";
       });
   },
 });
 
-export const { logout, clearError, clearRegisterError, resetRegisterState } =
+export const { logout, clearError, clearRegisterError, resetRegisterState, resetUpdateProfileState } =
   authSlice.actions;
 export default authSlice.reducer;

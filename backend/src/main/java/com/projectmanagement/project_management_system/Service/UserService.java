@@ -5,7 +5,9 @@ import com.projectmanagement.project_management_system.DTO.UpdateUserDTO;
 import com.projectmanagement.project_management_system.DTO.UserResponseDTO;
 import com.projectmanagement.project_management_system.Entity.User;
 import com.projectmanagement.project_management_system.Exception.DuplicateEmailException;
+import com.projectmanagement.project_management_system.Exception.UnauthorizedException;
 import com.projectmanagement.project_management_system.Repository.UserRepository;
+import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -52,13 +54,17 @@ public class UserService implements UserDetailsService {
         return new UserResponseDTO(user.getId(), user.getEmail(), user.getFirstName(), user.getLastName());
     }
 
-
+    @Transactional
     public UserResponseDTO updateUserProfile(String email, @Valid UpdateUserDTO request) {
 
-            User user = userRepository.findByEmail(email)
-                    .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UnauthorizedException("User not found with email: " + email));
 
 
-        return null;
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
+        User updatedUser = userRepository.save(user);
+        return new UserResponseDTO(updatedUser.getId(), updatedUser.getEmail(), updatedUser.getFirstName(), updatedUser.getLastName());
+
     }
 }

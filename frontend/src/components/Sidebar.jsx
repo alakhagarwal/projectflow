@@ -13,6 +13,7 @@ import { useOrg } from "../redux/hooks/useOrg";
 import { useProj } from "../redux/hooks/useProj";
 import { useTask } from "../redux/hooks/useTask";
 import CreateOrg from "./CreateOrg";
+import ProfileSettingsModal from "./ProfileSettingsModal";
 import { NavLink} from "react-router-dom";
 
 // Icons as simple components
@@ -128,6 +129,7 @@ const PlusIcon = () => (
 export default function Sidebar() {
   const [orgMenuOpened, setOrgMenuOpened] = useState(false);
   const [createOrgOpened, setCreateOrgOpened] = useState(false);
+  const [settingsOpened, setSettingsOpened] = useState(false);
   const [tasksExpanded, setTasksExpanded] = useState(true);
   const [projectsExpanded, setProjectsExpanded] = useState(true);
   const { organizations, loading, error, setSelectedOrg, selectedOrganization } = useOrg();
@@ -162,7 +164,6 @@ export default function Sidebar() {
     { id: "dashboard", label: "Dashboard", icon: <DashboardIcon /> },
     { id: "projects", label: "Projects", icon: <ProjectsIcon /> },
     { id: "team", label: "Team", icon: <TeamIcon /> },
-    { id: "settings", label: "Settings", icon: <SettingsIcon /> },
   ];
 
   return (
@@ -328,12 +329,34 @@ export default function Sidebar() {
           >
             <div className="flex items-center gap-3">
               <span style={{ color: '#6B7280', fontWeight: 600 }}>{item.icon}</span>
-              <span style={{ fontSize: '14px', fontWeight: 600 }}>{item.label}</span>
-            </div>
-          </NavLink>
-        ))}
+                <span style={{ fontSize: '14px', fontWeight: 600 }}>{item.label}</span>
+              </div>
+            </NavLink>
+          ))}
 
-        <Divider my="md" />
+          <button
+            onClick={() => setSettingsOpened(true)}
+            style={{
+              display: 'block',
+              width: '100%',
+              textAlign: 'left',
+              padding: '10px',
+              borderRadius: '8px',
+              border: 'none',
+              background: 'transparent',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              color: '#374151',
+            }}
+            className="hover:bg-gray-50 bg-transparent"
+          >
+            <div className="flex items-center gap-3">
+              <span style={{ color: '#6B7280', fontWeight: 600 }}><SettingsIcon /></span>
+              <span style={{ fontSize: '14px', fontWeight: 600 }}>Settings</span>
+            </div>
+          </button>
+
+          <Divider my="md" />
 
         {/* My Tasks */}
         <Box
@@ -456,6 +479,11 @@ export default function Sidebar() {
       <CreateOrg
         opened={createOrgOpened}
         onClose={() => setCreateOrgOpened(false)}
+      />
+
+      <ProfileSettingsModal
+        opened={settingsOpened}
+        onClose={() => setSettingsOpened(false)}
       />
     </Box>
   );

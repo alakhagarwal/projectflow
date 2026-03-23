@@ -7,6 +7,8 @@ import {
   clearError,
   clearRegisterError,
   resetRegisterState,
+  updateProfile,
+  resetUpdateProfileState,
 } from "../slices/authSlice";
 import { clearOrganizations } from "../slices/orgSlice";
 
@@ -25,6 +27,9 @@ export const useAuth = () => {
     fullName,
     isValidating, // ADD
     validationChecked, // ADD
+    updateProfileLoading,
+    updateProfileError,
+    updateProfileSuccess,
   } = useSelector((state) => state.auth);
 
   return {
@@ -40,6 +45,9 @@ export const useAuth = () => {
     registerSuccess,
     isValidating, // ADD - shows if token is being validated
     validationChecked, // ADD - shows if validation completed
+    updateProfileLoading,
+    updateProfileError,
+    updateProfileSuccess,
 
     // Actions
     login: (credentials) => dispatch(loginUser(credentials)),
@@ -52,5 +60,7 @@ export const useAuth = () => {
     clearError: () => dispatch(clearError()),
     clearRegisterError: () => dispatch(clearRegisterError()),
     resetRegisterState: () => dispatch(resetRegisterState()),
+    updateProfile: (userData) => dispatch(updateProfile(userData)),
+    resetUpdateProfileState: () => dispatch(resetUpdateProfileState()),
   };
 };
