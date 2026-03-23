@@ -20,6 +20,7 @@ public class RegisterRequestDTO {
     @Size(min = 8, message = "Password must be at least 8 characters")
     private String password;
 
+    @NotBlank(message = "FirstName is required")
     @Size(max = 50, message = "First name must be at most 50 characters")
     private String firstName;
 

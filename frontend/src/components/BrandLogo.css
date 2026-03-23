@@ -1,0 +1,48 @@
+.brand-logo-wrap {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 176px;
+}
+
+.brand-logo-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 2px 6px rgba(79, 70, 229, 0.18));
+}
+
+.brand-logo-copy {
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+}
+
+.brand-logo-title {
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  font-size: 1.33rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #4f46e5;
+}
+
+.brand-logo-subtitle {
+  margin-top: 2px;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+  font-size: 0.54rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #64748b;
+  opacity: 0.86;
+}
+
+@media (max-width: 1100px) {
+  .brand-logo-wrap {
+    min-width: auto;
+  }
+
+  .brand-logo-subtitle {
+    display: none;
+  }
+}

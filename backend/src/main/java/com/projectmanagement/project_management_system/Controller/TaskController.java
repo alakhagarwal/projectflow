@@ -11,6 +11,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/task")
 @RequiredArgsConstructor
@@ -25,5 +27,17 @@ public class TaskController {
         return ResponseEntity.status(HttpStatus.CREATED).body(taskResponseDTO);
     }
 
-    @GetMapping("")
+
+    @GetMapping("/fetch/{projID}")
+    public ResponseEntity<?> getTasksByProject(@PathVariable Long projID, @AuthenticationPrincipal UserDetails userDetails) {
+        List<TaskResponseDTO> taskResponseDTOS = taskService.getTasksByProject(projID, userDetails.getUsername());
+        return ResponseEntity.ok(taskResponseDTOS);
+    }
+
+    @GetMapping("/assigned-tasks/{orgID}")
+    public ResponseEntity<?> getAssignedTasks(@PathVariable Long orgID, @AuthenticationPrincipal UserDetails userDetails) {
+        List<TaskResponseDTO> taskResponseDTOS = taskService.getAssignedTasksInOrganization(orgID, userDetails.getUsername());
+        return ResponseEntity.ok(taskResponseDTOS);
+    }
+
 }

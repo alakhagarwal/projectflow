@@ -4,6 +4,7 @@ import com.projectmanagement.project_management_system.Filter.JWTAuthenticationF
 import com.projectmanagement.project_management_system.Filter.JwtValidationFilter;
 import com.projectmanagement.project_management_system.Module.JWTAuthenticationProvider;
 import com.projectmanagement.project_management_system.Module.JWTUtil;
+import com.projectmanagement.project_management_system.Service.UserService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -25,11 +26,13 @@ public class SecurityConfig {
     private JWTUtil jwtUtil;
     private UserDetailsService userDetailsService;
     private PasswordEncoder passwordEncoder;
+    private UserService userService;
 
-    public SecurityConfig(JWTUtil jwtUtil, UserDetailsService userDetailsService, PasswordEncoder passwordEncoder) {
+    public SecurityConfig(JWTUtil jwtUtil, UserDetailsService userDetailsService, PasswordEncoder passwordEncoder, UserService userService) {
         this.jwtUtil = jwtUtil;
         this.userDetailsService = userDetailsService;
         this.passwordEncoder = passwordEncoder;
+        this.userService = userService;
     }
 
     @Bean
@@ -53,18 +56,17 @@ public class SecurityConfig {
             JWTUtil jwtUtil
     ) throws Exception {
 
-        // Authentication filter responsible for login
         JWTAuthenticationFilter jwtAuthFilter =
-                new JWTAuthenticationFilter(authenticationManager, jwtUtil);
+                new JWTAuthenticationFilter(authenticationManager, jwtUtil, userService);
 
         JwtValidationFilter jwtValidationFilter =
                 new JwtValidationFilter(authenticationManager);
 
 
         http
-                .cors(cors -> cors.configure(http)) // Enable CORS with the CorsConfig
+                .cors(cors -> cors.configure(http))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/register", "/generate-token","/upload","/download/**","/org/accept-invite").permitAll()
+                        .requestMatchers("/auth/register", "/generate-token", "/upload", "/download/**", "/org/accept-invite").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

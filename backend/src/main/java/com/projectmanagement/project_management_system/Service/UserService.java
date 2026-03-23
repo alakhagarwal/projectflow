@@ -1,10 +1,14 @@
 package com.projectmanagement.project_management_system.Service;
 
 import com.projectmanagement.project_management_system.DTO.RegisterRequestDTO;
+import com.projectmanagement.project_management_system.DTO.UpdateUserDTO;
 import com.projectmanagement.project_management_system.DTO.UserResponseDTO;
 import com.projectmanagement.project_management_system.Entity.User;
 import com.projectmanagement.project_management_system.Exception.DuplicateEmailException;
+import com.projectmanagement.project_management_system.Exception.UnauthorizedException;
 import com.projectmanagement.project_management_system.Repository.UserRepository;
+import jakarta.transaction.Transactional;
+import jakarta.validation.Valid;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -14,9 +18,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserService implements UserDetailsService {
 
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
 
-    private PasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
@@ -44,5 +48,23 @@ public class UserService implements UserDetailsService {
 
     }
 
+    public UserResponseDTO getUserByEmail(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+        return new UserResponseDTO(user.getId(), user.getEmail(), user.getFirstName(), user.getLastName());
+    }
 
+    @Transactional
+    public UserResponseDTO updateUserProfile(String email, @Valid UpdateUserDTO request) {
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new UnauthorizedException("User not found with email: " + email));
+
+
+        user.setFirstName(request.getFirstName());
+        user.setLastName(request.getLastName());
+        User updatedUser = userRepository.save(user);
+        return new UserResponseDTO(updatedUser.getId(), updatedUser.getEmail(), updatedUser.getFirstName(), updatedUser.getLastName());
+
+    }
 }

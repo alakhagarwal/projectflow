@@ -7,6 +7,7 @@ import com.projectmanagement.project_management_system.Entity.OrganizationMember
 import com.projectmanagement.project_management_system.Entity.User;
 import com.projectmanagement.project_management_system.Enums.MemberStatus;
 import com.projectmanagement.project_management_system.Enums.OrganizationRole;
+import com.projectmanagement.project_management_system.Exception.DuplicateResourceException;
 import com.projectmanagement.project_management_system.Exception.InvalidRequestException;
 import com.projectmanagement.project_management_system.Repository.OrganizationMemberRepository;
 import com.projectmanagement.project_management_system.Repository.OrganizationRepository;
@@ -54,14 +55,14 @@ public class OrganizationService {
         this.emailService = emailService;
     }
 
-    @Transactional // ensures if S3 upload fails, database rollback happens
+    @Transactional
     public OrgResponse createOrganization(String name, String slug, MultipartFile logo, String userEmail) throws IOException {
         User creator = userRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
 
         if (organizationRepository.existsBySlug(slug)) {
-            throw new RuntimeException("Organization with this slug already exists");
+            throw new DuplicateResourceException("Organization with this slug already exists");
         }
 
 
@@ -74,7 +75,7 @@ public class OrganizationService {
         Organization organization = new Organization();
         organization.setName(name);
         organization.setSlug(slug);
-        organization.setLogoUrl(s3Key);  // Store S3 key, not presigned URL
+        organization.setLogoUrl(s3Key);
         organization.setCreatedBy(creator);
 
 
@@ -87,8 +88,8 @@ public class OrganizationService {
         organizationMember.setOrganization(savedOrg);
         organizationMember.setOrganizationRole(OrganizationRole.ADMIN);
         organizationMember.setMemberStatus(MemberStatus.ACTIVE);
-        organizationMember.setInviteToken(null); // No invite token for creator
-        organizationMember.setInviteExpiresAt(null); // No expiration for creator
+        organizationMember.setInviteToken(null);
+        organizationMember.setInviteExpiresAt(null);
         organizationMemberRepository.save(organizationMember);
 
 
@@ -129,7 +130,7 @@ public class OrganizationService {
 
     public String generatePresignedUrl(String key) {
         GetObjectPresignRequest presignRequest = GetObjectPresignRequest.builder()
-                .signatureDuration(Duration.ofDays(7))  // URL expires in 7 days
+                .signatureDuration(Duration.ofDays(7))
                 .getObjectRequest(req -> req.bucket(bucketName).key(key))
                 .build();
 
@@ -142,16 +143,12 @@ public class OrganizationService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new InvalidRequestException("User not found"));
 
-        // Get organizations created by user
         List<Organization> createdOrgs = organizationRepository.findByCreatorEmail(email);
 
-        // Get organizations where user is an ACTIVE member (not INVITED)
         List<OrganizationMember> memberOrgs = organizationMemberRepository.findByUser(user);
 
-        // Convert to OrgResponse - avoid duplicates
         List<OrgResponse> orgResponses = new java.util.ArrayList<>();
 
-        // Add created organizations
         for (Organization org : createdOrgs) {
             OrgResponse response = new OrgResponse(
                     org.getId(),
@@ -163,13 +160,8 @@ public class OrganizationService {
             orgResponses.add(response);
         }
 
-        // Add member organizations (avoid duplicates if user created and is also a member)
-        // Only include ACTIVE members, exclude INVITED status
         for (OrganizationMember member : memberOrgs) {
             Organization org = member.getOrganization();
-            // Only add if:
-            // 1. Not already added (user didn't create it)
-            // 2. Member status is ACTIVE (not INVITED)
             if (!createdOrgs.contains(org) && member.getMemberStatus() == MemberStatus.ACTIVE) {
                 OrgResponse response = new OrgResponse(
                         org.getId(),
@@ -211,7 +203,6 @@ public class OrganizationService {
         User invitedUser = userRepository.findByEmail(memberAddDTO.getEmail())
                 .orElseThrow(() -> new InvalidRequestException("Invited user not found"));
 
-        // ✅ FIX: Check if user already has ANY membership (INVITED or ACTIVE)
         Optional<OrganizationMember> existingMembership = organizationMemberRepository
                 .findByUserAndOrganization(invitedUser, organization);
 
@@ -230,7 +221,7 @@ public class OrganizationService {
         invitation.setOrganizationRole(memberAddDTO.getRole());
         invitation.setMemberStatus(MemberStatus.INVITED);
         invitation.setInviteToken(UUID.randomUUID().toString());
-        invitation.setInviteExpiresAt(java.time.Instant.now().plus(Duration.ofDays(7))); // Invitation valid for 7 days
+        invitation.setInviteExpiresAt(java.time.Instant.now().plus(Duration.ofDays(7)));
 
         OrganizationMember savedInvitation = organizationMemberRepository.save(invitation);
 
@@ -256,14 +247,12 @@ public class OrganizationService {
 
         User user = invitation.getUser();
 
-        // Check if already active
         if (invitation.getMemberStatus() == MemberStatus.ACTIVE) {
             throw new InvalidRequestException("Invitation already accepted");
         }
 
-        // Activate membership
         invitation.setMemberStatus(MemberStatus.ACTIVE);
-        invitation.setInviteToken(null);  // Clear token after use
+        invitation.setInviteToken(null);
         invitation.setInviteExpiresAt(null);
 
         organizationMemberRepository.save(invitation);

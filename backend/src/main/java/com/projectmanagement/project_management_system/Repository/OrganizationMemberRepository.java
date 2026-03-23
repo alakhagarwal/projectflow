@@ -3,6 +3,7 @@ package com.projectmanagement.project_management_system.Repository;
 import com.projectmanagement.project_management_system.Entity.Organization;
 import com.projectmanagement.project_management_system.Entity.OrganizationMember;
 import com.projectmanagement.project_management_system.Entity.User;
+import com.projectmanagement.project_management_system.Enums.MemberStatus;
 import com.projectmanagement.project_management_system.Enums.OrganizationRole;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -14,11 +15,8 @@ import java.util.Optional;
 
 @Repository
 public interface OrganizationMemberRepository extends JpaRepository<OrganizationMember,Long> {
-
-    // Check if user is a member of organization
     Optional<OrganizationMember> findByUserIdAndOrganizationId(Long userId, Long organizationId);
 
-    // Check if user has specific role in organization
     Optional<OrganizationMember> findByUserIdAndOrganizationIdAndOrganizationRole(
             Long userId,
             Long organizationId,
@@ -34,11 +32,11 @@ public interface OrganizationMemberRepository extends JpaRepository<Organization
 
     Optional<OrganizationMember> findByUserAndOrganization(User invitedUser, Organization organization);
 
-    // Find all organizations where user is a member (both INVITED and ACTIVE)
+    Optional<OrganizationMember> findByUserIdAndOrganizationIdAndMemberStatus(Long userId, Long organizationId, MemberStatus memberStatus);
+
     @Query("SELECT om FROM OrganizationMember om WHERE om.user = :user")
     List<OrganizationMember> findByUser(@Param("user") User user);
 
-    // Find all members of an organization
     List<OrganizationMember> findByOrganizationId(Long organizationId);
 
 }
