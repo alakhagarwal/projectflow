@@ -1,22 +1,25 @@
 package com.projectmanagement.project_management_system.Service;
 
 import com.projectmanagement.project_management_system.Exception.InvalidRequestException;
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
+import com.projectmanagement.project_management_system.Exception.InvalidRequestException;
+import com.sendgrid.Method;
+import com.sendgrid.Request;
+import com.sendgrid.Response;
+import com.sendgrid.SendGrid;
+import com.sendgrid.helpers.mail.Mail;
+import com.sendgrid.helpers.mail.objects.Content;
+import com.sendgrid.helpers.mail.objects.Email;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.time.LocalDate;
 
 @Service
 @RequiredArgsConstructor
 public class EmailService {
-
-    private final JavaMailSender mailSender;
 
     @Value("${spring.mail.username}")
     private String fromEmail;
@@ -24,32 +27,15 @@ public class EmailService {
     @Value("${app.frontend.url}")
     private String frontendUrl;
 
+    @Value("${sendgrid.api.key}")
+    private String sendgridApiKey;
+
     @Async
     public void sendInvitationEmail(String toEmail, String inviterName,
                                     String orgName, String token, String role) {
-        try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-            helper.setFrom(fromEmail);
-            helper.setTo(toEmail);
-            helper.setSubject(inviterName + " invited you to join " + orgName);
-
-            String htmlContent = buildInvitationEmailHtml(inviterName, orgName, token, role);
-            helper.setText(htmlContent, true);
-
-            mailSender.send(message);
-
-            System.out.println("✅ Invitation email sent to: " + toEmail);
-        } catch (MessagingException e) {
-            System.err.println("❌ Failed to send email to: " + toEmail);
-            e.printStackTrace();
-            throw new InvalidRequestException("Failed to send invitation email");
-        } catch (Exception e) {
-            System.err.println("❌ Unexpected error sending email to: " + toEmail);
-            e.printStackTrace();
-            throw new InvalidRequestException("Failed to send invitation email: " + e.getMessage());
-        }
+        String subject = inviterName + " invited you to join " + orgName;
+        String htmlContent = buildInvitationEmailHtml(inviterName, orgName, token, role);
+        sendHtmlEmail(toEmail, subject, htmlContent);
     }
 
     @Async
@@ -62,37 +48,41 @@ public class EmailService {
                                       String taskTitle,
                                       String taskDescription,
                                       LocalDate dueDate) {
+        String subject = "New task assigned: " + taskTitle;
+        String htmlContent = buildTaskAssignedEmailHtml(
+                assigneeName, assignedByName, projectName, projectId, taskId, taskTitle, taskDescription, dueDate
+        );
+        sendHtmlEmail(toEmail, subject, htmlContent);
+    }
+
+    private void sendHtmlEmail(String to, String subject, String htmlBody) {
+        if (sendgridApiKey == null || sendgridApiKey.isBlank()) {
+            throw new IllegalStateException("SendGrid API key is not configured.");
+        }
+
+        Email from = new Email(fromEmail);
+        Email toEmail = new Email(to);
+        Content content = new Content("text/html", htmlBody);
+        Mail mail = new Mail(from, subject, toEmail, content);
+
+        SendGrid sg = new SendGrid(sendgridApiKey);
+        Request request = new Request();
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-            helper.setFrom(fromEmail);
-            helper.setTo(toEmail);
-            helper.setSubject("New task assigned: " + taskTitle);
-
-            String htmlContent = buildTaskAssignedEmailHtml(
-                    assigneeName,
-                    assignedByName,
-                    projectName,
-                    projectId,
-                    taskId,
-                    taskTitle,
-                    taskDescription,
-                    dueDate
-            );
-            helper.setText(htmlContent, true);
-
-            mailSender.send(message);
-
-            System.out.println("Task assignment email sent to: " + toEmail);
-        } catch (MessagingException e) {
-            System.err.println("Failed to send task assignment email to: " + toEmail);
-            e.printStackTrace();
-            throw new InvalidRequestException("Failed to send task assignment email");
-        } catch (Exception e) {
-            System.err.println("Unexpected error sending task assignment email to: " + toEmail);
-            e.printStackTrace();
-            throw new InvalidRequestException("Failed to send task assignment email: " + e.getMessage());
+            request.setMethod(Method.POST);
+            request.setEndpoint("mail/send");
+            request.setBody(mail.build());
+            Response response = sg.api(request);
+            
+            if (response.getStatusCode() >= 200 && response.getStatusCode() < 300) {
+                System.out.println("✅ Email sent via SendGrid to: " + to + " (Status: " + response.getStatusCode() + ")");
+            } else {
+                System.err.println("❌ SendGrid error: " + response.getBody());
+                throw new InvalidRequestException("Failed to send email via SendGrid: " + response.getBody());
+            }
+        } catch (IOException ex) {
+            System.err.println("❌ Network error sending SendGrid email to: " + to);
+            ex.printStackTrace();
+            throw new InvalidRequestException("Network error sending email via SendGrid: " + ex.getMessage());
         }
     }
 
