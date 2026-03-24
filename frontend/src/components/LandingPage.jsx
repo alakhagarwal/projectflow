@@ -71,7 +71,9 @@ const techStack = [
   { name: "Mantine UI", color: "#339af0" },
   { name: "Tailwind CSS", color: "#38bdf8" },
   { name: "JWT Auth", color: "#f97316" },
-  { name: "MYSQL", color: "#336791" },
+  { name: "MySQL", color: "#336791" },
+  { name: "AWS S3", color: "#ff9900" },
+  { name: "SendGrid API", color: "#00a1e0" },
   { name: "Vite", color: "#646cff" },
 ];
 
