@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -23,6 +24,7 @@ public class EmailService {
     @Value("${app.frontend.url}")
     private String frontendUrl;
 
+    @Async
     public void sendInvitationEmail(String toEmail, String inviterName,
                                     String orgName, String token, String role) {
         try {
@@ -50,6 +52,7 @@ public class EmailService {
         }
     }
 
+    @Async
     public void sendTaskAssignedEmail(String toEmail,
                                       String assigneeName,
                                       String assignedByName,
