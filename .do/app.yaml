@@ -1,0 +1,12 @@
+name: projectflow-app
+services:
+- name: pms-backend
+  github:
+    branch: dev
+    deploy_on_push: true
+    repo: alakhagarwal/projectflow
+  source_dir: backend
+  environment_slug: java
+  instance_count: 1
+  instance_size_slug: basic-xxs
+  http_port: 8080
