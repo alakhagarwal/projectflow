@@ -66,7 +66,7 @@ public class SecurityConfig {
         http
                 .cors(cors -> cors.configure(http))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/register", "/generate-token", "/upload", "/download/**", "/org/accept-invite").permitAll()
+                        .requestMatchers("/auth/register", "/generate-token", "/upload", "/download/**", "/org/accept-invite", "/health").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
